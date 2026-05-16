@@ -1,62 +1,7 @@
---***********************************************************
---** JSON API
---** Tracks player sessions via polling and writes JSON files
---** for external consumption by server management tools.
---**
---** Output files (in Zomboid/Lua/json-api/):
---**   status.json  - current server state and player list
---**   events.jsonl - append-only log of connect/disconnect events
---***********************************************************
-
 if isClient() then return end
 
 local JsonAPI = {}
-
--- Tracked players: username -> {steamId, connectTime}
 JsonAPI.tracked = {}
-
--- ============================================================
--- JSON Serialization
--- ============================================================
-
-local function jsonEscape(s)
-    return s:gsub('\\', '\\\\'):gsub('"', '\\"'):gsub('\n', '\\n')
-end
-
-local function toJson(val)
-    if val == nil then return "null" end
-    local t = type(val)
-    if t == "string" then return '"' .. jsonEscape(val) .. '"' end
-    if t == "number" then return tostring(val) end
-    if t == "boolean" then return val and "true" or "false" end
-    if t ~= "table" then return '"' .. tostring(val) .. '"' end
-    -- Check if array
-    local isArray = (val[1] ~= nil or next(val) == nil)
-    local result = ""
-    if isArray then
-        result = "["
-        for i = 1, #val do
-            if i > 1 then result = result .. "," end
-            result = result .. toJson(val[i])
-        end
-        result = result .. "]"
-    else
-        result = "{"
-        local first = true
-        for k, v in pairs(val) do
-            if not first then result = result .. "," end
-            result = result .. '"' .. tostring(k) .. '":' .. toJson(v)
-            first = false
-        end
-        result = result .. "}"
-    end
-    return result
-end
-
--- ============================================================
--- File I/O
--- ============================================================
-
 local OUTPUT_DIR = "json-api"
 
 local function writeFile(filename, content, append)
@@ -67,84 +12,58 @@ local function writeFile(filename, content, append)
     end
 end
 
-local function appendEvent(event)
-    writeFile("events.jsonl", toJson(event) .. "\n", true)
+local function buildPlayerJson(p)
+    local username = p:getUsername()
+    local steamId = tostring(p:getSteamID())
+    local x = math.floor(p:getX())
+    local y = math.floor(p:getY())
+    return '{"username":"' .. username .. '","steamId":"' .. steamId .. '","x":' .. x .. ',"y":' .. y .. '}'
 end
 
--- ============================================================
--- Session Tracking (poll-based)
--- ============================================================
+local function buildStatusJson()
+    local onlinePlayers = getOnlinePlayers()
+    if not onlinePlayers then return '{"playerCount":0,"players":[]}' end
+    local count = onlinePlayers:size()
+    local playersJson = ""
+    for i = 0, count - 1 do
+        if i > 0 then playersJson = playersJson .. "," end
+        playersJson = playersJson .. buildPlayerJson(onlinePlayers:get(i))
+    end
+    return '{"playerCount":' .. count .. ',"players":[' .. playersJson .. ']}'
+end
 
-local function getTimestamp()
-    return Calendar.getInstance():getTimeInMillis()
+local function buildEventJson(eventType, username, steamId)
+    return '{"type":"' .. eventType .. '","username":"' .. username .. '","steamId":"' .. steamId .. '"}'
 end
 
 local function checkPlayers()
     local onlinePlayers = getOnlinePlayers()
     if not onlinePlayers then return end
-
     local currentUsers = {}
-    local playerData = {}
-
     for i = 0, onlinePlayers:size() - 1 do
         local p = onlinePlayers:get(i)
         local username = p:getUsername()
         local steamId = tostring(p:getSteamID())
         currentUsers[username] = steamId
-
-        -- Detect new connection
         if not JsonAPI.tracked[username] then
-            local ts = getTimestamp()
-            JsonAPI.tracked[username] = { steamId = steamId, connectTime = ts }
-            local event = { type = "connect", username = username, steamId = steamId, timestamp = ts }
-            appendEvent(event)
-            print("[JsonAPI] Connected: " .. username .. " (" .. steamId .. ")")
+            JsonAPI.tracked[username] = steamId
+            writeFile("events.jsonl", buildEventJson("connect", username, steamId) .. "\n", true)
+            print("[JsonAPI] Connected: " .. username)
         end
-
-        local session = JsonAPI.tracked[username]
-        playerData[#playerData+1] = {
-            username = username,
-            steamId = steamId,
-            x = math.floor(p:getX()),
-            y = math.floor(p:getY()),
-            connectTime = session.connectTime
-        }
     end
-
-    -- Detect disconnections
-    for username, session in pairs(JsonAPI.tracked) do
+    for username, steamId in pairs(JsonAPI.tracked) do
         if not currentUsers[username] then
-            local ts = getTimestamp()
-            local event = {
-                type = "disconnect",
-                username = username,
-                steamId = session.steamId,
-                timestamp = ts,
-                duration = ts - session.connectTime
-            }
-            appendEvent(event)
-            print("[JsonAPI] Disconnected: " .. username .. " (" .. session.steamId .. ")")
+            writeFile("events.jsonl", buildEventJson("disconnect", username, steamId) .. "\n", true)
+            print("[JsonAPI] Disconnected: " .. username)
             JsonAPI.tracked[username] = nil
         end
     end
-
-    -- Write status file
-    local status = {
-        playerCount = #playerData,
-        players = playerData,
-        timestamp = getTimestamp()
-    }
-    writeFile("status.json", toJson(status), false)
+    writeFile("status.json", buildStatusJson(), false)
 end
 
--- ============================================================
--- Initialization & Event Hooks
--- ============================================================
-
 local function onServerStarted()
-    -- Clear stale events on server start
     writeFile("events.jsonl", "", false)
-    writeFile("status.json", toJson({ playerCount = 0, players = {}, timestamp = getTimestamp() }), false)
+    writeFile("status.json", '{"playerCount":0,"players":[]}', false)
     print("[JsonAPI] Initialized. Output: Lua/" .. OUTPUT_DIR .. "/")
 end
 
