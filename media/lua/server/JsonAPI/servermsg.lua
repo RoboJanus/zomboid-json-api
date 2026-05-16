@@ -4,27 +4,21 @@ local function handleServerMsg(args)
     local message = args.message
     if not message then return '{"error":"missing arg: message"}' end
 
-    -- Try saveGame
-    local saveResult = "untested"
-    if args.message == "save" then
-        local ok, err = pcall(saveGame)
-        saveResult = ok and "saveGame() worked" or ("saveGame error: " .. tostring(err))
-        return '{"result":"' .. JsonAPI.jsonEscape(saveResult) .. '"}'
+    local checks = ""
+    if SendCommandToServer then checks = checks .. "SendCommandToServer=yes " end
+    if processSayMessage then checks = checks .. "processSayMessage=yes " end
+
+    if args.message == "trysay" and processSayMessage then
+        local ok, err = pcall(processSayMessage, "Hello from JSON API!")
+        return '{"result":"processSayMessage: ' .. (ok and "worked" or JsonAPI.jsonEscape(tostring(err))) .. '"}'
     end
 
-    -- Probe getConnectedPlayers
-    if args.message == "probe" then
-        local players = getConnectedPlayers()
-        if not players then return '{"result":"getConnectedPlayers returned nil"}' end
-        local info = "type=" .. type(players) .. " size=" .. tostring(players:size())
-        if players:size() > 0 then
-            local p = players:get(0)
-            info = info .. " class=" .. tostring(getClassName(p))
-        end
-        return '{"result":"' .. JsonAPI.jsonEscape(info) .. '"}'
+    if args.message == "trycmd" and SendCommandToServer then
+        local ok, err = pcall(SendCommandToServer, "servermsg \"Hello from JSON API!\"")
+        return '{"result":"SendCommandToServer: ' .. (ok and "worked" or JsonAPI.jsonEscape(tostring(err))) .. '"}'
     end
 
-    return '{"result":"send message=save or message=probe"}'
+    return '{"globals":"' .. JsonAPI.jsonEscape(checks) .. '"}'
 end
 
 Events.OnServerStarted.Add(function()
