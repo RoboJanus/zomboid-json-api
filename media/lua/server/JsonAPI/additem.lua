@@ -15,6 +15,8 @@ local function handleAddItem(args)
                 for c = 1, count do
                     inv:AddItem(itemType)
                 end
+                inv:setDirty(true)
+                inv:sendContentsToRemoteContainer()
                 return '{"added":"' .. JsonAPI.jsonEscape(itemType) .. '","count":' .. count .. ',"to":"' .. JsonAPI.jsonEscape(username) .. '"}'
             end
         end

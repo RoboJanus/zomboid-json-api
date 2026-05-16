@@ -2,17 +2,17 @@ if isClient() then return end
 
 local function handleKickShutdown(args)
     local reason = args.reason or "Safe Server Shutdown Initiated"
-    local onlinePlayers = getOnlinePlayers()
+    local connections = GameServer.udpEngine.connections
     local kicked = 0
-    if onlinePlayers then
-        for i = 0, onlinePlayers:size() - 1 do
-            local p = onlinePlayers:get(i)
-            p:setKicked(reason)
+    for i = 0, connections:size() - 1 do
+        local conn = connections:get(i)
+        if conn.username then
+            GameServer.kick(conn, reason, "admin")
             kicked = kicked + 1
         end
     end
-    getGameServer():save()
-    getGameServer():shutdown()
+    ServerMap.instance:QueueSaveAll()
+    GameServer.shutdown()
     return '{"kicked":' .. kicked .. ',"reason":"' .. JsonAPI.jsonEscape(reason) .. '","shutdown":true}'
 end
 

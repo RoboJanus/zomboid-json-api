@@ -1,7 +1,7 @@
 if isClient() then return end
 
 local function handleSave(args)
-    getGameServer():save()
+    ServerMap.instance:QueueSaveAll()
     return '{"saved":true}'
 end
 
