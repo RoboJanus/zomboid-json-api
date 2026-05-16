@@ -117,54 +117,48 @@ end
 -- ============================================================
 
 local function checkRequests()
-    -- Read the request queue file (one request per line, format: filename|json)
-    local reader = getFileReader(REQUEST_DIR .. "/queue.txt", true)
+    -- Read the request queue file (JSON array of request objects)
+    -- Format: [{"id":"test001","path":"sessions","args":{}}]
+    local reader = getFileReader(REQUEST_DIR .. "/queue.json", true)
     if not reader then return end
-    local requests = {}
+    local content = ""
     local line = reader:readLine()
     while line ~= nil do
-        if line ~= "" then
-            requests[#requests + 1] = line
-        end
+        content = content .. line
         line = reader:readLine()
     end
     reader:close()
 
-    if #requests == 0 then return end
+    if content == "" or content == "[]" then return end
 
     -- Clear the queue
-    writeFile(REQUEST_DIR .. "/queue.txt", "")
+    writeFile(REQUEST_DIR .. "/queue.json", "[]")
 
-    -- Process each request
-    for i = 1, #requests do
-        local entry = requests[i]
-        -- Format: filename|json_content
-        local sep = entry:find("|")
-        if sep then
-            local filename = entry:sub(1, sep - 1)
-            local content = entry:sub(sep + 1)
-            local path = content:match('"path"%s*:%s*"([^"]*)"')
-            if path then
-                local handler = JsonAPI.handlers[path]
-                if handler then
-                    local args = {}
-                    for key, value in content:gmatch('"([^"]+)"%s*:%s*"([^"]*)"') do
-                        if key ~= "path" then args[key] = value end
-                    end
-                    local ok, response = pcall(handler, args)
-                    if ok then
-                        writeFile(RESPONSE_DIR .. "/" .. filename, response)
-                    else
-                        writeFile(RESPONSE_DIR .. "/" .. filename, '{"error":"' .. jsonEscape(tostring(response)) .. '"}')
-                    end
-                else
-                    writeFile(RESPONSE_DIR .. "/" .. filename, '{"error":"unknown path: ' .. jsonEscape(path) .. '"}')
-                end
+    -- Parse requests (simple pattern matching for each object)
+    for id, path in content:gmatch('"id"%s*:%s*"([^"]*)"%s*,%s*"path"%s*:%s*"([^"]*)"') do
+        local handler = JsonAPI.handlers[path]
+        if handler then
+            local args = {}
+            local ok, response = pcall(handler, args)
+            if ok then
+                writeFile(RESPONSE_DIR .. "/" .. id .. ".json", response)
             else
-                writeFile(RESPONSE_DIR .. "/" .. filename, '{"error":"invalid request: missing path"}')
+                writeFile(RESPONSE_DIR .. "/" .. id .. ".json", '{"error":"' .. jsonEscape(tostring(response)) .. '"}')
             end
+        else
+            writeFile(RESPONSE_DIR .. "/" .. id .. ".json", '{"error":"unknown path: ' .. jsonEscape(path) .. '"}')
         end
     end
+end
+
+local POLL_INTERVAL_MS = 2000
+local lastPollTime = 0
+
+local function onTick()
+    local now = getTimestampMs()
+    if now - lastPollTime < POLL_INTERVAL_MS then return end
+    lastPollTime = now
+    checkRequests()
 end
 
 -- ============================================================
@@ -172,16 +166,16 @@ end
 -- ============================================================
 
 local function onServerStarted()
-    -- Ensure directories exist
-    writeFile(REQUEST_DIR .. "/.init", "")
+    -- Ensure directories and queue file exist
+    writeFile(REQUEST_DIR .. "/queue.json", "[]")
     writeFile(RESPONSE_DIR .. "/.init", "")
 
     -- Register built-in handlers
     JsonAPI.addHandler("sessions", handleSessions)
     JsonAPI.addHandler("status", handleStatus)
 
-    print("[JsonAPI] Initialized. Listening for requests in Lua/" .. REQUEST_DIR .. "/")
+    print("[JsonAPI] Initialized. Listening for requests in Lua/" .. REQUEST_DIR .. "/queue.json")
 end
 
 Events.OnServerStarted.Add(onServerStarted)
-Events.EveryOneMinute.Add(checkRequests)
+Events.OnTick.Add(onTick)
