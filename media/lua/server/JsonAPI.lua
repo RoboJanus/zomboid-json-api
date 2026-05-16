@@ -12,12 +12,29 @@ local function writeFile(filename, content, append)
     end
 end
 
+local function steamIdToString(steamId)
+    return string.format("%.0f", steamId)
+end
+
+local function getCharacterName(p)
+    local desc = p:getDescriptor()
+    if desc then
+        local forename = desc:getForename() or ""
+        local surname = desc:getSurname() or ""
+        if forename ~= "" or surname ~= "" then
+            return forename .. " " .. surname
+        end
+    end
+    return p:getUsername()
+end
+
 local function buildPlayerJson(p)
     local username = p:getUsername()
-    local steamId = tostring(p:getSteamID())
+    local steamId = steamIdToString(p:getSteamID())
+    local name = getCharacterName(p)
     local x = math.floor(p:getX())
     local y = math.floor(p:getY())
-    return '{"username":"' .. username .. '","steamId":"' .. steamId .. '","x":' .. x .. ',"y":' .. y .. '}'
+    return '{"username":"' .. username .. '","steamId":"' .. steamId .. '","name":"' .. name .. '","x":' .. x .. ',"y":' .. y .. '}'
 end
 
 local function buildStatusJson()
@@ -32,8 +49,8 @@ local function buildStatusJson()
     return '{"playerCount":' .. count .. ',"players":[' .. playersJson .. ']}'
 end
 
-local function buildEventJson(eventType, username, steamId)
-    return '{"type":"' .. eventType .. '","username":"' .. username .. '","steamId":"' .. steamId .. '"}'
+local function buildEventJson(eventType, username, steamId, name)
+    return '{"type":"' .. eventType .. '","username":"' .. username .. '","steamId":"' .. steamId .. '","name":"' .. name .. '"}'
 end
 
 local function checkPlayers()
@@ -43,18 +60,19 @@ local function checkPlayers()
     for i = 0, onlinePlayers:size() - 1 do
         local p = onlinePlayers:get(i)
         local username = p:getUsername()
-        local steamId = tostring(p:getSteamID())
+        local steamId = steamIdToString(p:getSteamID())
+        local name = getCharacterName(p)
         currentUsers[username] = steamId
         if not JsonAPI.tracked[username] then
-            JsonAPI.tracked[username] = steamId
-            writeFile("events.jsonl", buildEventJson("connect", username, steamId) .. "\n", true)
-            print("[JsonAPI] Connected: " .. username)
+            JsonAPI.tracked[username] = { steamId = steamId, name = name }
+            writeFile("events.jsonl", buildEventJson("connect", username, steamId, name) .. "\n", true)
+            print("[JsonAPI] Connected: " .. username .. " (" .. name .. ")")
         end
     end
-    for username, steamId in pairs(JsonAPI.tracked) do
+    for username, info in pairs(JsonAPI.tracked) do
         if not currentUsers[username] then
-            writeFile("events.jsonl", buildEventJson("disconnect", username, steamId) .. "\n", true)
-            print("[JsonAPI] Disconnected: " .. username)
+            writeFile("events.jsonl", buildEventJson("disconnect", username, info.steamId, info.name) .. "\n", true)
+            print("[JsonAPI] Disconnected: " .. username .. " (" .. info.name .. ")")
             JsonAPI.tracked[username] = nil
         end
     end
@@ -69,4 +87,3 @@ end
 
 Events.OnServerStarted.Add(onServerStarted)
 Events.EveryOneMinute.Add(checkPlayers)
--- Build 42+ server-side mod
