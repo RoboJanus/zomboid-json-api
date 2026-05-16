@@ -1,0 +1,9 @@
+VERSION = 1,
+
+option JsonAPI.VerboseLogging
+{
+    type = boolean,
+    default = false,
+    page = JsonAPI,
+    translation = JsonAPI_VerboseLogging,
+}

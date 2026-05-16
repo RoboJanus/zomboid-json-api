@@ -142,11 +142,19 @@ local function checkRequests()
             local ok, response = pcall(handler, args)
             if ok then
                 writeFile(RESPONSE_DIR .. "/" .. id .. ".json", response)
+                if SandboxVars and SandboxVars.JsonAPI and SandboxVars.JsonAPI.VerboseLogging then
+                    print("[JsonAPI] Request: " .. id .. " -> " .. path)
+                    print("[JsonAPI] Response: " .. RESPONSE_DIR .. "/" .. id .. ".json")
+                end
             else
                 writeFile(RESPONSE_DIR .. "/" .. id .. ".json", '{"error":"' .. jsonEscape(tostring(response)) .. '"}')
+                print("[JsonAPI] ERROR processing " .. id .. ": " .. tostring(response))
             end
         else
             writeFile(RESPONSE_DIR .. "/" .. id .. ".json", '{"error":"unknown path: ' .. jsonEscape(path) .. '"}')
+            if SandboxVars and SandboxVars.JsonAPI and SandboxVars.JsonAPI.VerboseLogging then
+                print("[JsonAPI] Request: " .. id .. " -> " .. path .. " (unknown)")
+            end
         end
     end
 end
