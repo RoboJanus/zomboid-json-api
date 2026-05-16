@@ -4,22 +4,27 @@ local function handleServerMsg(args)
     local message = args.message
     if not message then return '{"error":"missing arg: message"}' end
 
-    local checks = ""
-    if rcon then checks = checks .. "rcon=yes " end
-    if executeCommand then checks = checks .. "executeCommand=yes " end
-    if serverCommand then checks = checks .. "serverCommand=yes " end
-    if getWorld then checks = checks .. "getWorld=yes " end
-    if getCell then checks = checks .. "getCell=yes " end
-    if saveGame then checks = checks .. "saveGame=yes " end
-    if quit then checks = checks .. "quit=yes " end
-    if shutdown then checks = checks .. "shutdown=yes " end
-    if kick then checks = checks .. "kick=yes " end
-    if kickUser then checks = checks .. "kickUser=yes " end
-    if getPlayerByUserName then checks = checks .. "getPlayerByUserName=yes " end
-    if getConnectedPlayers then checks = checks .. "getConnectedPlayers=yes " end
-    if ServerLog then checks = checks .. "ServerLog=yes " end
+    -- Try saveGame
+    local saveResult = "untested"
+    if args.message == "save" then
+        local ok, err = pcall(saveGame)
+        saveResult = ok and "saveGame() worked" or ("saveGame error: " .. tostring(err))
+        return '{"result":"' .. JsonAPI.jsonEscape(saveResult) .. '"}'
+    end
 
-    return '{"globals":"' .. JsonAPI.jsonEscape(checks) .. '"}'
+    -- Probe getConnectedPlayers
+    if args.message == "probe" then
+        local players = getConnectedPlayers()
+        if not players then return '{"result":"getConnectedPlayers returned nil"}' end
+        local info = "type=" .. type(players) .. " size=" .. tostring(players:size())
+        if players:size() > 0 then
+            local p = players:get(0)
+            info = info .. " class=" .. tostring(getClassName(p))
+        end
+        return '{"result":"' .. JsonAPI.jsonEscape(info) .. '"}'
+    end
+
+    return '{"result":"send message=save or message=probe"}'
 end
 
 Events.OnServerStarted.Add(function()
