@@ -116,56 +116,53 @@ end
 -- Request Processing
 -- ============================================================
 
-local function processRequest(filename)
-    local content = readFile(REQUEST_DIR .. "/" .. filename)
-    if not content or content == "" then return end
-
-    -- Simple JSON array parse: extract path and args
-    -- Expected: [{"path":"endpoint","args":{}}]
-    local path = content:match('"path"%s*:%s*"([^"]*)"')
-    if not path then
-        writeFile(RESPONSE_DIR .. "/" .. filename, '{"error":"invalid request: missing path"}')
-        return
-    end
-
-    local handler = JsonAPI.handlers[path]
-    if not handler then
-        writeFile(RESPONSE_DIR .. "/" .. filename, '{"error":"unknown path: ' .. jsonEscape(path) .. '"}')
-        return
-    end
-
-    -- Extract args (simple key-value parse)
-    local args = {}
-    for key, value in content:gmatch('"([^"]+)"%s*:%s*"([^"]*)"') do
-        if key ~= "path" then
-            args[key] = value
-        end
-    end
-
-    local ok, response = pcall(handler, args)
-    if ok then
-        writeFile(RESPONSE_DIR .. "/" .. filename, response)
-    else
-        writeFile(RESPONSE_DIR .. "/" .. filename, '{"error":"handler error: ' .. jsonEscape(tostring(response)) .. '"}')
-    end
-end
-
 local function checkRequests()
-    -- List files in request directory
-    local reader = getFileReader(REQUEST_DIR .. "/.poll", true)
-    if reader then reader:close() end
+    -- Read the request queue file (one request per line, format: filename|json)
+    local reader = getFileReader(REQUEST_DIR .. "/queue.txt", true)
+    if not reader then return end
+    local requests = {}
+    local line = reader:readLine()
+    while line ~= nil do
+        if line ~= "" then
+            requests[#requests + 1] = line
+        end
+        line = reader:readLine()
+    end
+    reader:close()
 
-    -- Scan for request files
-    local dir = REQUEST_DIR
-    local files = getFileList(dir)
-    if not files then return end
+    if #requests == 0 then return end
 
-    for i = 0, files:size() - 1 do
-        local filename = files:get(i)
-        if filename:sub(-5) == ".json" then
-            processRequest(filename)
-            -- Delete processed request
-            deleteFile(dir .. "/" .. filename)
+    -- Clear the queue
+    writeFile(REQUEST_DIR .. "/queue.txt", "")
+
+    -- Process each request
+    for i = 1, #requests do
+        local entry = requests[i]
+        -- Format: filename|json_content
+        local sep = entry:find("|")
+        if sep then
+            local filename = entry:sub(1, sep - 1)
+            local content = entry:sub(sep + 1)
+            local path = content:match('"path"%s*:%s*"([^"]*)"')
+            if path then
+                local handler = JsonAPI.handlers[path]
+                if handler then
+                    local args = {}
+                    for key, value in content:gmatch('"([^"]+)"%s*:%s*"([^"]*)"') do
+                        if key ~= "path" then args[key] = value end
+                    end
+                    local ok, response = pcall(handler, args)
+                    if ok then
+                        writeFile(RESPONSE_DIR .. "/" .. filename, response)
+                    else
+                        writeFile(RESPONSE_DIR .. "/" .. filename, '{"error":"' .. jsonEscape(tostring(response)) .. '"}')
+                    end
+                else
+                    writeFile(RESPONSE_DIR .. "/" .. filename, '{"error":"unknown path: ' .. jsonEscape(path) .. '"}')
+                end
+            else
+                writeFile(RESPONSE_DIR .. "/" .. filename, '{"error":"invalid request: missing path"}')
+            end
         end
     end
 end
