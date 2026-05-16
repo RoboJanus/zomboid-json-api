@@ -21,7 +21,7 @@ External Tool                    PZ Server (this mod)
 ## Installation
 
 1. Subscribe on [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3727258553)
-2. Add `jsonapi` to your server's `Mods=` line in the `.ini` file
+2. Add `\jsonapi` to your server's `Mods=` line in the `.ini` file
 3. Add the Workshop ID to `WorkshopItems=`
 4. Restart the server
 

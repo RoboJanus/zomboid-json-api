@@ -4,11 +4,11 @@ local function handleKick(args)
     local username = args.username
     if not username then return '{"error":"missing arg: username"}' end
     local reason = args.reason or "Kicked by admin"
-    local connections = zombie.network.GameServer.udpEngine.connections
+    local connections = GameServer.udpEngine.connections
     for i = 0, connections:size() - 1 do
         local conn = connections:get(i)
         if conn.username == username then
-            zombie.network.GameServer.kick(conn, reason, "admin")
+            GameServer.kick(conn, reason, "admin")
             return '{"kicked":"' .. JsonAPI.jsonEscape(username) .. '","reason":"' .. JsonAPI.jsonEscape(reason) .. '"}'
         end
     end
