@@ -1,0 +1,17 @@
+"workshopitem"
+{
+  "appid" "108600"
+  "publishedfileid" "0"
+  "contentfolder" "./content"
+  "previewfile" "./preview.png"
+  "visibility" "2"
+  "title" "JSON API"
+  "description" "Server-side mod that writes real-time JSON status and player session events to files, enabling external tools to monitor and manage game servers without RCON parsing.\n\nOutput files (written to <cachedir>/Lua/json-api/):\n- status.json: Current player list with positions, steam IDs, and connect times\n- events.jsonl: Append-only log of connect/disconnect events\n\nUse cases:\n- External dashboards\n- Discord bots\n- Session tracking\n- Server management APIs\n\nServer-side only — no client installation required.\nBuild 42+ compatible."
+  "changenote" "Initial release"
+  "tags"
+  {
+    "0" "Build 42"
+    "1" "Server"
+    "2" "Utility"
+  }
+}
