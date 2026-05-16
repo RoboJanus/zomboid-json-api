@@ -186,4 +186,4 @@ local function onServerStarted()
 end
 
 Events.OnServerStarted.Add(onServerStarted)
-Events.OnTick.Add(onTick)
+Events.OnTickEvenPaused.Add(onTick)
