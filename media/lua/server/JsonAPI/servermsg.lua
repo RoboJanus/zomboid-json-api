@@ -3,7 +3,8 @@ if isClient() then return end
 local function handleServerMsg(args)
     local message = args.message
     if not message then return '{"error":"missing arg: message"}' end
-    GameServer.sendAdminMessage(message, -1, -1, -1)
+    local chatServer = zombie.network.chat.ChatServer.getInstance()
+    chatServer:sendServerAlertMessageToServerChat(message)
     return '{"sent":true,"message":"' .. JsonAPI.jsonEscape(message) .. '"}'
 end
 

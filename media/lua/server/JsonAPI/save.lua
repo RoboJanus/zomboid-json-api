@@ -1,7 +1,7 @@
 if isClient() then return end
 
 local function handleSave(args)
-    ServerMap.instance:QueueSaveAll()
+    zombie.network.ServerMap.instance:QueueSaveAll()
     return '{"saved":true}'
 end
 
