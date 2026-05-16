@@ -4,33 +4,44 @@ local function handleServerMsg(args)
     local message = args.message
     if not message then return '{"error":"missing arg: message"}' end
 
-    -- Try multiple access patterns
-    local cs = nil
-    local method = "none"
+    -- Try GameServer.rcon which is in the B42 JavaDocs
+    local result = "none"
 
-    if ChatServer then
-        cs = ChatServer.getInstance()
-        method = "ChatServer"
+    -- Pattern 1: direct global
+    if GameServer then
+        result = "GameServer global exists"
     end
 
-    if not cs and zombie and zombie.network and zombie.network.chat and zombie.network.chat.ChatServer then
-        cs = zombie.network.chat.ChatServer.getInstance()
-        method = "zombie.network.chat.ChatServer"
+    -- Pattern 2: via getGameServer (might be a LuaManager global)
+    if not GameServer and getGameServer then
+        result = "getGameServer exists"
     end
 
-    if not cs then
-        -- Try via getClassField reflection approach
-        local available = ""
-        if ChatServer then available = available .. "ChatServer=yes " else available = available .. "ChatServer=no " end
-        if ServerChat then available = available .. "ServerChat=yes " else available = available .. "ServerChat=no " end
-        if GameServer then available = available .. "GameServer=yes " else available = available .. "GameServer=no " end
-        if ServerMap then available = available .. "ServerMap=yes " else available = available .. "ServerMap=no " end
-        if ChatBase then available = available .. "ChatBase=yes " else available = available .. "ChatBase=no " end
-        return '{"error":"no chat access","available":"' .. available .. '"}'
+    -- Pattern 3: check if it's on the server object
+    if not GameServer and isServer() then
+        -- Try accessing via class reflection
+        local ok, err = pcall(function()
+            local gs = zombie.network.GameServer
+            if gs then result = "zombie.network.GameServer works" end
+        end)
+        if not ok then result = "pcall error: " .. tostring(err) end
     end
 
-    cs:sendServerAlertMessageToServerChat(message)
-    return '{"sent":true,"message":"' .. JsonAPI.jsonEscape(message) .. '","method":"' .. method .. '"}'
+    -- Pattern 4: try sendServerCommand which we know works
+    if not GameServer then
+        -- sendServerCommand is a known global - what about sendAdminMessage?
+        local checks = ""
+        if sendServerCommand then checks = checks .. "sendServerCommand=yes " end
+        if sendAdminMessage then checks = checks .. "sendAdminMessage=yes " end
+        if getOnlinePlayers then checks = checks .. "getOnlinePlayers=yes " end
+        if getGameServer then checks = checks .. "getGameServer=yes " end
+        if getServerOptions then checks = checks .. "getServerOptions=yes " end
+        if ServerMap then checks = checks .. "ServerMap=yes " end
+        if getServerMap then checks = checks .. "getServerMap=yes " end
+        result = "globals: " .. checks
+    end
+
+    return '{"result":"' .. JsonAPI.jsonEscape(result) .. '"}'
 end
 
 Events.OnServerStarted.Add(function()
