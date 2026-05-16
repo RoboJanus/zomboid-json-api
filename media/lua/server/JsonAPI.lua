@@ -62,7 +62,7 @@ end
 -- ============================================================
 
 local function steamIdToString(steamId)
-    return string.format("%.0f", steamId)
+    return Long.toString(steamId)
 end
 
 local function jsonEscape(s)
@@ -112,6 +112,73 @@ local function handleStatus(args)
     return '{"playerCount":' .. count .. ',"serverName":"' .. jsonEscape(getServerName()) .. '"}'
 end
 
+local function handleKick(args)
+    local username = args.username
+    if not username then return '{"error":"missing arg: username"}' end
+    local reason = args.reason or "Kicked by admin"
+    local onlinePlayers = getOnlinePlayers()
+    if onlinePlayers then
+        for i = 0, onlinePlayers:size() - 1 do
+            local p = onlinePlayers:get(i)
+            if p:getUsername() == username then
+                p:setKicked(reason)
+                return '{"kicked":"' .. jsonEscape(username) .. '","reason":"' .. jsonEscape(reason) .. '"}'
+            end
+        end
+    end
+    return '{"error":"player not found: ' .. jsonEscape(username) .. '"}'
+end
+
+local function handleServerMsg(args)
+    local message = args.message
+    if not message then return '{"error":"missing arg: message"}' end
+    getGameServer():sendServerCommand("servermsg", message)
+    return '{"sent":true,"message":"' .. jsonEscape(message) .. '"}'
+end
+
+local function handleSave(args)
+    getGameServer():save()
+    return '{"saved":true}'
+end
+
+local function handleAddItem(args)
+    local username = args.username
+    local itemType = args.item
+    local count = tonumber(args.count) or 1
+    if not username then return '{"error":"missing arg: username"}' end
+    if not itemType then return '{"error":"missing arg: item"}' end
+    local onlinePlayers = getOnlinePlayers()
+    if onlinePlayers then
+        for i = 0, onlinePlayers:size() - 1 do
+            local p = onlinePlayers:get(i)
+            if p:getUsername() == username then
+                local inv = p:getInventory()
+                for c = 1, count do
+                    inv:AddItem(itemType)
+                end
+                return '{"added":"' .. jsonEscape(itemType) .. '","count":' .. count .. ',"to":"' .. jsonEscape(username) .. '"}'
+            end
+        end
+    end
+    return '{"error":"player not found: ' .. jsonEscape(username) .. '"}'
+end
+
+local function handleKickShutdown(args)
+    local reason = args.reason or "Safe Server Shutdown Initiated"
+    local onlinePlayers = getOnlinePlayers()
+    local kicked = 0
+    if onlinePlayers then
+        for i = 0, onlinePlayers:size() - 1 do
+            local p = onlinePlayers:get(i)
+            p:setKicked(reason)
+            kicked = kicked + 1
+        end
+    end
+    getGameServer():save()
+    getGameServer():shutdown()
+    return '{"kicked":' .. kicked .. ',"reason":"' .. jsonEscape(reason) .. '","shutdown":true}'
+end
+
 -- ============================================================
 -- Request Processing
 -- ============================================================
@@ -138,7 +205,13 @@ local function checkRequests()
     for id, path in content:gmatch('"id"%s*:%s*"([^"]*)"%s*,%s*"path"%s*:%s*"([^"]*)"') do
         local handler = JsonAPI.handlers[path]
         if handler then
+            -- Extract args: find all "key":"value" pairs that aren't id or path
             local args = {}
+            for key, value in content:gmatch('"([^"]+)"%s*:%s*"([^"]*)"') do
+                if key ~= "id" and key ~= "path" then
+                    args[key] = value
+                end
+            end
             local ok, response = pcall(handler, args)
             local ts = string.format("%.0f", getTimestampMs())
             if ok then
@@ -187,6 +260,11 @@ local function onServerStarted()
     -- Register built-in handlers
     JsonAPI.addHandler("sessions", handleSessions)
     JsonAPI.addHandler("status", handleStatus)
+    JsonAPI.addHandler("kick", handleKick)
+    JsonAPI.addHandler("servermsg", handleServerMsg)
+    JsonAPI.addHandler("save", handleSave)
+    JsonAPI.addHandler("additem", handleAddItem)
+    JsonAPI.addHandler("kickShutdown", handleKickShutdown)
 
     print("[JsonAPI] Initialized. Listening for requests in Lua/" .. REQUEST_DIR .. "/queue.json")
 end
