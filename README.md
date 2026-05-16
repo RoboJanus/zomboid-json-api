@@ -61,16 +61,21 @@ The queue is cleared after processing. Multiple requests can be batched in a sin
 
 ## Response Format
 
-Each request produces a response file at `responses/<id>.json` containing the handler's JSON output.
+Each request produces a response file at `responses/<id>.json` wrapped in a timestamp envelope:
 
-**Success:**
 ```json
-{"playerCount": 1, "players": [...]}
+{
+  "timestamp": 1778967526210,
+  "response": {"playerCount": 1, "players": [...]}
+}
 ```
 
 **Error:**
 ```json
-{"error": "unknown path: invalid/endpoint"}
+{
+  "timestamp": 1778967526210,
+  "error": "unknown path: invalid/endpoint"
+}
 ```
 
 ## Built-in Endpoints
@@ -78,6 +83,10 @@ Each request produces a response file at `responses/<id>.json` containing the ha
 ### `sessions`
 
 Returns connected players with details.
+
+```json
+[{"id": "req001", "path": "sessions"}]
+```
 
 ```json
 {
@@ -99,10 +108,74 @@ Returns connected players with details.
 Returns basic server info.
 
 ```json
+[{"id": "req002", "path": "status"}]
+```
+
+```json
 {
   "playerCount": 1,
   "serverName": "My Server"
 }
+```
+
+### `kick`
+
+Kick a player by username.
+
+```json
+[{"id": "req003", "path": "kick", "username": "griefer", "reason": "Breaking rules"}]
+```
+
+```json
+{"kicked": "griefer", "reason": "Breaking rules"}
+```
+
+### `servermsg`
+
+Send an in-game message to all players.
+
+```json
+[{"id": "req004", "path": "servermsg", "message": "Server restarting in 5 minutes"}]
+```
+
+```json
+{"sent": true, "message": "Server restarting in 5 minutes"}
+```
+
+### `save`
+
+Trigger a world save.
+
+```json
+[{"id": "req005", "path": "save"}]
+```
+
+```json
+{"saved": true}
+```
+
+### `additem`
+
+Give an item to a connected player.
+
+```json
+[{"id": "req006", "path": "additem", "username": "survivor1", "item": "Base.Axe", "count": "1"}]
+```
+
+```json
+{"added": "Base.Axe", "count": 1, "to": "survivor1"}
+```
+
+### `kickShutdown`
+
+Kick all players (forcing character save), save the world, and shut down the server.
+
+```json
+[{"id": "req007", "path": "kickShutdown", "reason": "Scheduled maintenance"}]
+```
+
+```json
+{"kicked": 3, "reason": "Scheduled maintenance", "shutdown": true}
 ```
 
 ## Configuration
@@ -184,6 +257,23 @@ JsonAPI.addHandler(path, handlerFunction)
 - Use your mod name as a prefix for paths: `"my-mod/endpoint"`
 - Return valid JSON objects (not arrays or primitives at the top level)
 - Keep responses concise — large responses slow down file I/O
+
+### Mod File Structure
+
+The built-in handlers each live in their own file under `media/lua/server/JsonAPI/` as reference implementations:
+
+```
+media/lua/server/
+├── JsonAPI.lua              ← Core framework (do not modify)
+└── JsonAPI/
+    ├── sessions.lua         ← Example: read-only query
+    ├── status.lua           ← Example: simple server info
+    ├── kick.lua             ← Example: action with required args
+    ├── servermsg.lua        ← Example: action with message arg
+    ├── save.lua             ← Example: no-arg action
+    ├── additem.lua          ← Example: action with multiple args
+    └── kickShutdown.lua     ← Example: compound action
+```
 
 ## Developing External Tools
 
