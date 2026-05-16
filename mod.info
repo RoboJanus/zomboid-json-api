@@ -1,4 +1,4 @@
 name=JSON API
-id=json-api
+id=jsonapi
 description=Writes JSON server status and player session events to files for external tools. Tracks connects, disconnects, and player positions.
 url=https://github.com/RoboJanus/zomboid-json-api
