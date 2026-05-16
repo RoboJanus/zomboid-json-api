@@ -6,7 +6,62 @@
   "previewfile" "./preview.png"
   "visibility" "0"
   "title" "JSON API"
-  "description" "[h1]JSON API[/h1]\nA server-side mod that outputs real-time player and server data as JSON files, making it easy for external tools to interact with your server.\n\n[h2]What It Does[/h2]\nEvery few seconds, the mod writes two files to your server's Lua directory:\n\n[b]status.json[/b] — Current server snapshot\n[list]\n[*] Connected player count\n[*] Player usernames, Steam IDs, and positions\n[*] Server timestamp\n[/list]\n\n[b]events.jsonl[/b] — Session event log\n[list]\n[*] Player connect events (username, Steam ID, timestamp)\n[*] Player disconnect events (username, Steam ID, duration)\n[*] Cleared on server restart\n[/list]\n\n[h2]Installation[/h2]\n[olist]\n[*] Subscribe to this mod\n[*] Add [b]jsonapi[/b] to your server's Mods= line in the .ini file\n[*] Restart the server\n[/olist]\n\n[h2]Output Location[/h2]\nFiles are written to:\n[code]<your Zomboid directory>/Lua/json-api/[/code]\n\nIf you use a custom -cachedir, the files will be inside that directory under Lua/json-api/.\n\n[h2]Example Output[/h2]\n[b]status.json:[/b]\n[code]{\n  \"playerCount\": 2,\n  \"players\": [\n    {\"username\": \"survivor1\", \"steamId\": \"76561198012345678\", \"x\": 10543, \"y\": 9821, \"connectTime\": 1778892000000}\n  ],\n  \"timestamp\": 1778892060000\n}[/code]\n\n[h2]Use Cases[/h2]\n[list]\n[*] Server dashboards and status pages\n[*] Discord bots that announce player joins/leaves\n[*] Playtime tracking and analytics\n[*] Custom server management tools\n[/list]\n\n[h2]Compatibility[/h2]\n[list]\n[*] Project Zomboid Build 42+\n[*] Multiplayer only (server-side)\n[*] No client installation required\n[*] No dependencies\n[/list]\n\n[h2]Source Code[/h2]\n[url=https://github.com/RoboJanus/zomboid-json-api]GitHub[/url]"
+  "description" "[h1]JSON API[/h1]
+A server-side mod that outputs real-time player and server data as JSON files, making it easy for external tools to interact with your server.
+
+[h2]What It Does[/h2]
+External tools write request JSON files, the mod processes them and writes response JSON files.
+
+[b]Request format:[/b] Write to requests/queue.json
+[code][{\"id\":\"req001\",\"path\":\"sessions\"}][/code]
+
+[b]Response:[/b] Written to responses/req001.json
+[code]{\"playerCount\":1,\"players\":[{\"username\":\"survivor1\",\"steamId\":\"76561198012345678\",\"name\":\"John Smith\",\"x\":10543,\"y\":9821}]}[/code]
+
+[h2]Built-in Endpoints[/h2]
+[list]
+[*] [b]sessions[/b] — Connected players with username, Steam ID, character name, position
+[*] [b]status[/b] — Player count and server name
+[/list]
+
+[h2]Installation[/h2]
+[olist]
+[*] Subscribe to this mod
+[*] Add [b]jsonapi[/b] to your server's Mods= line in the .ini file
+[*] Restart the server
+[/olist]
+
+[h2]Configuration[/h2]
+Sandbox Options > JSON API:
+[list]
+[*] [b]Poll Interval[/b] — How often to check for requests (default: 2 seconds)
+[*] [b]Verbose Logging[/b] — Log each request/response to console
+[/list]
+
+[h2]Extensibility[/h2]
+Other mods can register custom handlers:
+[code]JsonAPI.addHandler(\"my-mod/endpoint\", function(args) return '{\"result\":\"hello\"}' end)[/code]
+
+[h2]Use Cases[/h2]
+[list]
+[*] Server dashboards and status pages
+[*] Discord bots that announce player joins/leaves
+[*] Custom server management tools
+[*] Playtime tracking and analytics
+[/list]
+
+[h2]Compatibility[/h2]
+[list]
+[*] Project Zomboid Build 42+
+[*] Multiplayer only (server-side)
+[*] No client installation required
+[*] No dependencies
+[/list]
+
+[h2]Source Code[/h2]
+[url=https://github.com/RoboJanus/zomboid-json-api]GitHub[/url]
+
+[i][/i]"
   "changenote" "Initial release"
   "tags"
   {
