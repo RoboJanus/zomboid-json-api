@@ -69,3 +69,4 @@ end
 
 Events.OnServerStarted.Add(onServerStarted)
 Events.EveryOneMinute.Add(checkPlayers)
+-- Build 42+ server-side mod
