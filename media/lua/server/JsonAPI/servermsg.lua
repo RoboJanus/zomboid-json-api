@@ -3,7 +3,10 @@ if isClient() then return end
 local function handleServerMsg(args)
     local message = args.message
     if not message then return '{"error":"missing arg: message"}' end
-    ChatServer.getInstance():sendServerAlertMessageToServerChat(message)
+    if not ChatServer then return '{"error":"ChatServer not available"}' end
+    local instance = ChatServer.getInstance()
+    if not instance then return '{"error":"ChatServer.getInstance() returned nil"}' end
+    instance:sendServerAlertMessageToServerChat(message)
     return '{"sent":true,"message":"' .. JsonAPI.jsonEscape(message) .. '"}'
 end
 
