@@ -7,3 +7,13 @@ option JsonAPI.VerboseLogging
     page = JsonAPI,
     translation = JsonAPI_VerboseLogging,
 }
+
+option JsonAPI.PollInterval
+{
+    type = integer,
+    default = 2,
+    min = 1,
+    max = 60,
+    page = JsonAPI,
+    translation = JsonAPI_PollInterval,
+}

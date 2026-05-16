@@ -164,7 +164,11 @@ local lastPollTime = 0
 
 local function onTick()
     local now = getTimestampMs()
-    if now - lastPollTime < POLL_INTERVAL_MS then return end
+    local interval = POLL_INTERVAL_MS
+    if SandboxVars and SandboxVars.JsonAPI and SandboxVars.JsonAPI.PollInterval then
+        interval = SandboxVars.JsonAPI.PollInterval * 1000
+    end
+    if now - lastPollTime < interval then return end
     lastPollTime = now
     checkRequests()
 end

@@ -2,4 +2,6 @@ Sandbox_EN = {
     Sandbox_JsonAPI = "JSON API",
     Sandbox_JsonAPI_VerboseLogging = "Verbose Logging",
     Sandbox_JsonAPI_VerboseLogging_tooltip = "Log each request and response to the server console.",
+    Sandbox_JsonAPI_PollInterval = "Poll Interval (seconds)",
+    Sandbox_JsonAPI_PollInterval_tooltip = "How often to check for new requests. Lower values are more responsive but use more resources.",
 }
