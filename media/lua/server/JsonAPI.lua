@@ -30,23 +30,27 @@ local function toJson(val)
     if t == "number" then return tostring(val) end
     if t == "boolean" then return val and "true" or "false" end
     if t ~= "table" then return '"' .. tostring(val) .. '"' end
-    -- Check if array (has sequential integer keys)
-    local isArray = false
-    if val[1] ~= nil or next(val) == nil then
-        isArray = true
-    end
+    -- Check if array
+    local isArray = (val[1] ~= nil or next(val) == nil)
+    local result = ""
     if isArray then
-        local parts = {}
+        result = "["
         for i = 1, #val do
-            table.insert(parts, toJson(val[i]))
+            if i > 1 then result = result .. "," end
+            result = result .. toJson(val[i])
         end
-        return "[" .. table.concat(parts, ",") .. "]"
+        result = result .. "]"
+    else
+        result = "{"
+        local first = true
+        for k, v in pairs(val) do
+            if not first then result = result .. "," end
+            result = result .. '"' .. tostring(k) .. '":' .. toJson(v)
+            first = false
+        end
+        result = result .. "}"
     end
-    local parts = {}
-    for k, v in pairs(val) do
-        table.insert(parts, '"' .. tostring(k) .. '":' .. toJson(v))
-    end
-    return "{" .. table.concat(parts, ",") .. "}"
+    return result
 end
 
 -- ============================================================
