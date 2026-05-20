@@ -20,7 +20,7 @@ External Tool                    PZ Server (this mod)
 
 ## Installation
 
-1. Subscribe on [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3727258553)
+1. Subscribe on [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3727256572)
 2. Add `\jsonapi` to your server's `Mods=` line in the `.ini` file
 3. Add the Workshop ID to `WorkshopItems=`
 4. Restart the server
@@ -118,24 +118,12 @@ Returns basic server info.
 }
 ```
 
-### `kick`
-
-Kick a player by username.
-
-```json
-[{"id": "req003", "path": "kick", "username": "griefer", "reason": "Breaking rules"}]
-```
-
-```json
-{"kicked": "griefer", "reason": "Breaking rules"}
-```
-
 ### `servermsg`
 
-Send an in-game message to all players.
+Send an in-game message to all players in global chat.
 
 ```json
-[{"id": "req004", "path": "servermsg", "message": "Server restarting in 5 minutes"}]
+[{"id": "req003", "path": "servermsg", "message": "Server restarting in 5 minutes"}]
 ```
 
 ```json
@@ -144,10 +132,10 @@ Send an in-game message to all players.
 
 ### `save`
 
-Trigger a world save.
+Trigger a world save (includes all player data).
 
 ```json
-[{"id": "req005", "path": "save"}]
+[{"id": "req004", "path": "save"}]
 ```
 
 ```json
@@ -156,26 +144,14 @@ Trigger a world save.
 
 ### `additem`
 
-Give an item to a connected player.
+Give an item to a connected player. The item appears in their inventory immediately.
 
 ```json
-[{"id": "req006", "path": "additem", "username": "survivor1", "item": "Base.Axe", "count": "1"}]
+[{"id": "req005", "path": "additem", "username": "survivor1", "item": "Base.Axe", "count": "1"}]
 ```
 
 ```json
 {"added": "Base.Axe", "count": 1, "to": "survivor1"}
-```
-
-### `kickShutdown`
-
-Kick all players (forcing character save), save the world, and shut down the server.
-
-```json
-[{"id": "req007", "path": "kickShutdown", "reason": "Scheduled maintenance"}]
-```
-
-```json
-{"kicked": 3, "reason": "Scheduled maintenance", "shutdown": true}
 ```
 
 ## Configuration
@@ -268,11 +244,9 @@ media/lua/server/
 └── JsonAPI/
     ├── sessions.lua         ← Example: read-only query
     ├── status.lua           ← Example: simple server info
-    ├── kick.lua             ← Example: action with required args
     ├── servermsg.lua        ← Example: action with message arg
     ├── save.lua             ← Example: no-arg action
-    ├── additem.lua          ← Example: action with multiple args
-    └── kickShutdown.lua     ← Example: compound action
+    └── additem.lua          ← Example: action with multiple args
 ```
 
 ## Developing External Tools
@@ -323,8 +297,8 @@ request_id = str(int(time.time() * 1000))  # millisecond timestamp
 
 ## Compatibility
 
-- Project Zomboid Build 42+ (multiplayer)
-- Server-side only — no client installation required
+- Project Zomboid Build 42+ (multiplayer and singleplayer)
+- Includes server and client components
 - No dependencies
 - Works with or without players connected
 
