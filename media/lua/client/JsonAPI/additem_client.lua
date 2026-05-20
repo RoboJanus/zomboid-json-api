@@ -3,8 +3,14 @@ local function onServerCommand(module, command, args)
     if command == "refreshInventory" then
         local player = getPlayer()
         if player then
-            player:getInventory():setDrawDirty(true)
-            player:getInventory():setDirty(true)
+            local inv = player:getInventory()
+            inv:setDirty(true)
+            inv:setDrawDirty(true)
+            -- Force the inventory UI to refresh
+            local pData = getPlayerData(0)
+            if pData and pData.playerInventory then
+                pData.playerInventory:refreshBackpacks()
+            end
         end
     end
 end
