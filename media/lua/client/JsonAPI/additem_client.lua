@@ -1,15 +1,12 @@
 local function onServerCommand(module, command, args)
     if module ~= "JsonAPI" then return end
-    if command == "refreshInventory" then
+    if command == "refreshInventory" and args then
         local player = getPlayer()
-        if player then
+        if player and args.item then
+            local count = tonumber(args.count) or 1
             local inv = player:getInventory()
-            inv:setDirty(true)
-            inv:setDrawDirty(true)
-            -- Force the inventory UI to refresh
-            local pData = getPlayerData(0)
-            if pData and pData.playerInventory then
-                pData.playerInventory:refreshBackpacks()
+            for i = 1, count do
+                inv:AddItem(args.item)
             end
         end
     end

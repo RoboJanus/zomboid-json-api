@@ -16,7 +16,7 @@ local function handleAddItem(args)
                     inv:AddItem(itemType)
                 end
                 inv:setDirty(true)
-                sendServerCommand(p, "JsonAPI", "refreshInventory", {})
+                sendServerCommand(p, "JsonAPI", "refreshInventory", {item = itemType, count = tostring(count)})
                 return '{"added":"' .. JsonAPI.jsonEscape(itemType) .. '","count":' .. count .. ',"to":"' .. JsonAPI.jsonEscape(username) .. '"}'
             end
         end
