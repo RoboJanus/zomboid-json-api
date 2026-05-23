@@ -41,7 +41,13 @@ end
 -- ============================================================
 
 function JsonAPI.steamIdToString(steamId)
-    return Long.toString(steamId)
+    -- getSteamID() returns a Java Long; tostring() on it preserves precision
+    local s = tostring(steamId)
+    -- Remove any scientific notation or decimal
+    if s:find("[eE]") or s:find("%.") then
+        s = string.format("%.0f", steamId)
+    end
+    return s
 end
 
 function JsonAPI.jsonEscape(s)
