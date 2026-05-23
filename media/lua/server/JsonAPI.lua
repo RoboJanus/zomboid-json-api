@@ -91,18 +91,18 @@ local function checkRequests()
             local ok, response = pcall(handler, args)
             local ts = string.format("%.0f", getTimestampMs())
             if ok then
-                writeFile(RESPONSE_DIR .. "/" .. id .. ".json", '{"timestamp":' .. ts .. ',"response":' .. response .. '}')
+                writeFile(RESPONSE_DIR .. "/" .. id .. ".json", '{"timestamp":' .. ts .. ',"status":"success","response":' .. response .. '}')
                 if SandboxVars and SandboxVars.JsonAPI and SandboxVars.JsonAPI.VerboseLogging then
                     print("[JsonAPI] Request: " .. id .. " -> " .. path)
                     print("[JsonAPI] Response: " .. RESPONSE_DIR .. "/" .. id .. ".json")
                 end
             else
-                writeFile(RESPONSE_DIR .. "/" .. id .. ".json", '{"timestamp":' .. ts .. ',"error":"' .. JsonAPI.jsonEscape(tostring(response)) .. '"}')
+                writeFile(RESPONSE_DIR .. "/" .. id .. ".json", '{"timestamp":' .. ts .. ',"status":"error","error":"' .. JsonAPI.jsonEscape(tostring(response)) .. '"}')
                 print("[JsonAPI] ERROR processing " .. id .. ": " .. tostring(response))
             end
         else
             local ts = string.format("%.0f", getTimestampMs())
-            writeFile(RESPONSE_DIR .. "/" .. id .. ".json", '{"timestamp":' .. ts .. ',"error":"unknown path: ' .. JsonAPI.jsonEscape(path) .. '"}')
+            writeFile(RESPONSE_DIR .. "/" .. id .. ".json", '{"timestamp":' .. ts .. ',"status":"error","error":"unknown path: ' .. JsonAPI.jsonEscape(path) .. '"}')
             if SandboxVars and SandboxVars.JsonAPI and SandboxVars.JsonAPI.VerboseLogging then
                 print("[JsonAPI] Request: " .. id .. " -> " .. path .. " (unknown)")
             end

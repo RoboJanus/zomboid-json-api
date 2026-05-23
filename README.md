@@ -66,6 +66,7 @@ Each request produces a response file at `responses/<id>.json` wrapped in a time
 ```json
 {
   "timestamp": 1778967526210,
+  "status": "success",
   "response": {"playerCount": 1, "players": [...]}
 }
 ```
@@ -74,6 +75,7 @@ Each request produces a response file at `responses/<id>.json` wrapped in a time
 ```json
 {
   "timestamp": 1778967526210,
+  "status": "error",
   "error": "unknown path: invalid/endpoint"
 }
 ```
@@ -152,6 +154,65 @@ Give an item to a connected player. The item appears in their inventory immediat
 
 ```json
 {"added": "Base.Axe", "count": 1, "to": "survivor1"}
+```
+
+### `playerstats`
+
+Get detailed stats for a connected player including survival time, kills, and skill levels.
+
+```json
+[{"id": "req006", "path": "playerstats", "username": "survivor1"}]
+```
+
+```json
+{
+  "username": "survivor1",
+  "hoursSurvived": 48.5,
+  "zombieKills": 127,
+  "skills": {
+    "Fitness": 3,
+    "Strength": 4,
+    "Sprinting": 5,
+    "Lightfoot": 2,
+    "Nimble": 3,
+    "Sneak": 1,
+    "Axe": 4,
+    "Blunt": 2,
+    "SmallBlunt": 1,
+    "LongBlade": 0,
+    "SmallBlade": 1,
+    "Spear": 0,
+    "Maintenance": 3,
+    "Woodwork": 4,
+    "Cooking": 2,
+    "Farming": 1,
+    "Doctor": 2,
+    "Electricity": 0,
+    "MetalWelding": 1,
+    "Mechanics": 0,
+    "Tailoring": 2,
+    "Aiming": 3,
+    "Reloading": 2,
+    "Fishing": 0,
+    "Trapping": 0,
+    "PlantScavenging": 1
+  }
+}
+```
+
+Pass `"username": "all"` to get stats for all connected players:
+
+```json
+[{"id": "req007", "path": "playerstats", "username": "all"}]
+```
+
+```json
+{
+  "players": [
+    {"username": "survivor1", "hoursSurvived": 48.5, "zombieKills": 127, "skills": {...}},
+    {"username": "survivor2", "hoursSurvived": 12.3, "zombieKills": 42, "skills": {...}}
+  ]
+}
 ```
 
 ## Configuration
@@ -236,17 +297,18 @@ JsonAPI.addHandler(path, handlerFunction)
 
 ### Mod File Structure
 
-The built-in handlers each live in their own file under `media/lua/server/JsonAPI/` as reference implementations:
+The built-in handlers each live in their own file under `media/lua/server/jsonapi/` as reference implementations:
 
 ```
 media/lua/server/
 ├── JsonAPI.lua              ← Core framework (do not modify)
-└── JsonAPI/
+└── jsonapi/
     ├── sessions.lua         ← Example: read-only query
     ├── status.lua           ← Example: simple server info
     ├── servermsg.lua        ← Example: action with message arg
     ├── save.lua             ← Example: no-arg action
-    └── additem.lua          ← Example: action with multiple args
+    ├── additem.lua          ← Example: action with multiple args
+    └── playerstats.lua      ← Example: player data query with args
 ```
 
 ## Developing External Tools
