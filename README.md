@@ -167,6 +167,7 @@ Get detailed stats for a connected player including survival time, kills, and sk
 ```json
 {
   "username": "survivor1",
+  "name": "John Smith",
   "hoursSurvived": 48.5,
   "zombieKills": 127,
   "skills": {
@@ -209,8 +210,8 @@ Pass `"username": "all"` to get stats for all connected players:
 ```json
 {
   "players": [
-    {"username": "survivor1", "hoursSurvived": 48.5, "zombieKills": 127, "skills": {...}},
-    {"username": "survivor2", "hoursSurvived": 12.3, "zombieKills": 42, "skills": {...}}
+    {"username": "survivor1", "name": "John Smith", "hoursSurvived": 48.5, "zombieKills": 127, "skills": {...}},
+    {"username": "survivor2", "name": "Jane Doe", "hoursSurvived": 12.3, "zombieKills": 42, "skills": {...}}
   ]
 }
 ```

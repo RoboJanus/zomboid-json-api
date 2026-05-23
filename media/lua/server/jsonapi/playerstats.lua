@@ -11,6 +11,7 @@ local perks = {
 
 local function buildPlayerStats(player)
     local username = player:getUsername()
+    local name = player:getDisplayName()
     local hours = player:getHoursSurvived()
     local kills = player:getZombieKills()
 
@@ -28,6 +29,7 @@ local function buildPlayerStats(player)
     end
 
     return '{"username":"' .. username .. '"'
+        .. ',"name":"' .. (name or username) .. '"'
         .. ',"hoursSurvived":' .. string.format("%.1f", hours)
         .. ',"zombieKills":' .. kills
         .. ',"skills":{' .. skills .. '}}'
