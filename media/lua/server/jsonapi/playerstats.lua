@@ -1,37 +1,18 @@
 if isClient() then return end
 
-local function handlePlayerStats(args)
-    local username = args and args.username
-    if not username then
-        return '{"error":"username required"}'
-    end
+local perks = {
+    "Fitness", "Strength", "Sprinting", "Lightfoot", "Nimble",
+    "Sneak", "Axe", "Blunt", "SmallBlunt", "LongBlade",
+    "SmallBlade", "Spear", "Maintenance", "Woodwork",
+    "Cooking", "Farming", "Doctor", "Electricity",
+    "MetalWelding", "Mechanics", "Tailoring", "Aiming",
+    "Reloading", "Fishing", "Trapping", "PlantScavenging"
+}
 
-    local players = getOnlinePlayers()
-    local target = nil
-    for i = 0, players:size() - 1 do
-        local p = players:get(i)
-        if p:getUsername() == username then
-            target = p
-            break
-        end
-    end
-
-    if not target then
-        return '{"error":"player not found"}'
-    end
-
-    local hours = target:getHoursSurvived()
-    local kills = target:getZombieKills()
-
-    -- Gather skill levels
-    local perks = {
-        "Fitness", "Strength", "Sprinting", "Lightfoot", "Nimble",
-        "Sneak", "Axe", "Blunt", "SmallBlunt", "LongBlade",
-        "SmallBlade", "Spear", "Maintenance", "Woodwork",
-        "Cooking", "Farming", "Doctor", "Electricity",
-        "MetalWelding", "Mechanics", "Tailoring", "Aiming",
-        "Reloading", "Fishing", "Trapping", "PlantScavenging"
-    }
+local function buildPlayerStats(player)
+    local username = player:getUsername()
+    local hours = player:getHoursSurvived()
+    local kills = player:getZombieKills()
 
     local skills = ""
     local first = true
@@ -39,19 +20,46 @@ local function handlePlayerStats(args)
         local perkName = perks[i]
         local perk = Perks.FromString(perkName)
         if perk then
-            local level = target:getPerkLevel(perk)
+            local level = player:getPerkLevel(perk)
             if not first then skills = skills .. "," end
             skills = skills .. '"' .. perkName .. '":' .. level
             first = false
         end
     end
 
-    local result = '{"username":"' .. username .. '"'
-    result = result .. ',"hoursSurvived":' .. string.format("%.1f", hours)
-    result = result .. ',"zombieKills":' .. kills
-    result = result .. ',"skills":{' .. skills .. '}'
-    result = result .. '}'
-    return result
+    return '{"username":"' .. username .. '"'
+        .. ',"hoursSurvived":' .. string.format("%.1f", hours)
+        .. ',"zombieKills":' .. kills
+        .. ',"skills":{' .. skills .. '}}'
+end
+
+local function handlePlayerStats(args)
+    local username = args and args.username
+    if not username then
+        return '{"error":"username required"}'
+    end
+
+    local players = getOnlinePlayers()
+
+    if username == "all" then
+        local results = ""
+        local first = true
+        for i = 0, players:size() - 1 do
+            if not first then results = results .. "," end
+            results = results .. buildPlayerStats(players:get(i))
+            first = false
+        end
+        return '{"players":[' .. results .. ']}'
+    end
+
+    for i = 0, players:size() - 1 do
+        local p = players:get(i)
+        if p:getUsername() == username then
+            return buildPlayerStats(p)
+        end
+    end
+
+    return '{"error":"player not found"}'
 end
 
 Events.OnServerStarted.Add(function()
