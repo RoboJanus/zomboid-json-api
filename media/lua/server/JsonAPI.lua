@@ -41,7 +41,7 @@ end
 -- ============================================================
 
 function JsonAPI.steamIdToString(player)
-    return tostring(player:getSteamID())
+    return "" .. player:getSteamID()
 end
 
 function JsonAPI.jsonEscape(s)
