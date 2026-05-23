@@ -40,8 +40,9 @@ end
 -- JSON Helpers (exposed for handler use)
 -- ============================================================
 
-function JsonAPI.steamIdToString(steamId)
-    return Long.toString(steamId)
+function JsonAPI.steamIdToString(player)
+    -- Pass the player object, call getSteamID() and toString() in one Java chain
+    return Long.toString(player:getSteamID())
 end
 
 function JsonAPI.jsonEscape(s)

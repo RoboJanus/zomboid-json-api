@@ -8,7 +8,7 @@ local function handleSessions(args)
     for i = 0, count - 1 do
         local p = onlinePlayers:get(i)
         local username = p:getUsername()
-        local steamId = JsonAPI.steamIdToString(p:getSteamID())
+        local steamId = JsonAPI.steamIdToString(p)
         local name = username
         local desc = p:getDescriptor()
         if desc then
