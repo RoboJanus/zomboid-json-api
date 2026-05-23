@@ -41,8 +41,7 @@ end
 -- ============================================================
 
 function JsonAPI.steamIdToString(player)
-    -- Pass the player object, call getSteamID() and toString() in one Java chain
-    return Long.toString(player:getSteamID())
+    return tostring(player:getSteamID())
 end
 
 function JsonAPI.jsonEscape(s)
