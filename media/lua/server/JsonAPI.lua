@@ -41,13 +41,13 @@ end
 -- ============================================================
 
 function JsonAPI.steamIdToString(steamId)
-    -- getSteamID() returns a Java Long; tostring() on it preserves precision
-    local s = tostring(steamId)
-    -- Remove any scientific notation or decimal
-    if s:find("[eE]") or s:find("%.") then
-        s = string.format("%.0f", steamId)
+    -- Try calling Java .toString() directly on the object
+    if steamId and steamId.toString then
+        local ok, result = pcall(steamId.toString, steamId)
+        if ok and result then return result end
     end
-    return s
+    -- Fallback: format as float (may lose last digits for very large IDs)
+    return string.format("%.0f", steamId)
 end
 
 function JsonAPI.jsonEscape(s)
