@@ -40,10 +40,6 @@ end
 -- JSON Helpers (exposed for handler use)
 -- ============================================================
 
-function JsonAPI.steamIdToString(steamId)
-    return Long.toString(steamId)
-end
-
 function JsonAPI.jsonEscape(s)
     if not s then return "" end
     return tostring(s):gsub('\\', '\\\\'):gsub('"', '\\"')

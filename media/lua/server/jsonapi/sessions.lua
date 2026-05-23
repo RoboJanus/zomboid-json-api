@@ -8,7 +8,6 @@ local function handleSessions(args)
     for i = 0, count - 1 do
         local p = onlinePlayers:get(i)
         local username = p:getUsername()
-        local steamId = JsonAPI.steamIdToString(p:getSteamID())
         local name = username
         local desc = p:getDescriptor()
         if desc then
@@ -17,7 +16,7 @@ local function handleSessions(args)
             if fn ~= "" or sn ~= "" then name = fn .. " " .. sn end
         end
         if i > 0 then playersJson = playersJson .. "," end
-        playersJson = playersJson .. '{"username":"' .. JsonAPI.jsonEscape(username) .. '","steamId":"' .. steamId .. '","name":"' .. JsonAPI.jsonEscape(name) .. '","x":' .. math.floor(p:getX()) .. ',"y":' .. math.floor(p:getY()) .. '}'
+        playersJson = playersJson .. '{"username":"' .. JsonAPI.jsonEscape(username) .. '","name":"' .. JsonAPI.jsonEscape(name) .. '","x":' .. math.floor(p:getX()) .. ',"y":' .. math.floor(p:getY()) .. '}'
     end
     return '{"playerCount":' .. count .. ',"players":[' .. playersJson .. ']}'
 end
