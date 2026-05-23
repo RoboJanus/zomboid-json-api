@@ -41,13 +41,7 @@ end
 -- ============================================================
 
 function JsonAPI.steamIdToString(steamId)
-    -- Try calling Java .toString() directly on the object
-    if steamId and steamId.toString then
-        local ok, result = pcall(steamId.toString, steamId)
-        if ok and result then return result end
-    end
-    -- Fallback: format as float (may lose last digits for very large IDs)
-    return string.format("%.0f", steamId)
+    return Long.toString(steamId)
 end
 
 function JsonAPI.jsonEscape(s)
