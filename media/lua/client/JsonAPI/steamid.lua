@@ -2,11 +2,11 @@ if isServer() then return end
 
 print("[JsonAPI] Client steamid.lua loaded")
 
-local function onConnected()
-    print("[JsonAPI] OnConnected fired")
+local function onGameStart()
+    print("[JsonAPI] OnGameStart fired")
     local player = getPlayer()
     if not player then
-        print("[JsonAPI] ERROR: getPlayer() returned nil")
+        print("[JsonAPI] ERROR: getPlayer() returned nil in OnGameStart")
         return
     end
     local username = player:getUsername()
@@ -21,5 +21,5 @@ local function onConnected()
     end
 end
 
-Events.OnConnected.Add(onConnected)
-print("[JsonAPI] OnConnected handler registered")
+Events.OnGameStart.Add(onGameStart)
+print("[JsonAPI] OnGameStart handler registered")
