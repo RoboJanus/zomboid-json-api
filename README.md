@@ -96,7 +96,6 @@ Returns connected players with details.
   "players": [
     {
       "username": "survivor1",
-      "steamId": "76561198012345678",
       "name": "John Smith",
       "x": 10543,
       "y": 9821
