@@ -12,12 +12,19 @@ local function handleAddItem(args)
             local p = onlinePlayers:get(i)
             if p:getUsername() == username then
                 local inv = p:getInventory()
+                local added = 0
                 for c = 1, count do
-                    inv:AddItem(itemType)
+                    local item = inv:AddItem(itemType)
+                    if item then
+                        added = added + 1
+                    end
+                end
+                if added == 0 then
+                    return '{"error":"invalid item type: ' .. JsonAPI.jsonEscape(itemType) .. '"}'
                 end
                 inv:setDirty(true)
-                sendServerCommand(p, "JsonAPI", "refreshInventory", {item = itemType, count = tostring(count)})
-                return '{"added":"' .. JsonAPI.jsonEscape(itemType) .. '","count":' .. count .. ',"to":"' .. JsonAPI.jsonEscape(username) .. '"}'
+                sendServerCommand(p, "JsonAPI", "refreshInventory", {item = itemType, count = tostring(added)})
+                return '{"added":"' .. JsonAPI.jsonEscape(itemType) .. '","count":' .. added .. ',"to":"' .. JsonAPI.jsonEscape(username) .. '"}'
             end
         end
     end
