@@ -13,21 +13,16 @@ local function handleAddItem(args)
             if p:getUsername() == username then
                 local inv = p:getInventory()
                 local added = 0
-                local items = {}
                 for c = 1, count do
                     local item = inv:AddItem(itemType)
                     if item then
                         added = added + 1
-                        table.insert(items, item)
                     end
                 end
                 if added == 0 then
                     return '{"error":"invalid item type: ' .. JsonAPI.jsonEscape(itemType) .. '"}'
                 end
-                -- Force sync to client
-                for _, item in ipairs(items) do
-                    inv:addItemOnServer(item)
-                end
+                sendServerCommand(p, "JsonAPI", "refreshInventory", {item = itemType, count = tostring(added)})
                 return '{"added":"' .. JsonAPI.jsonEscape(itemType) .. '","count":' .. added .. ',"to":"' .. JsonAPI.jsonEscape(username) .. '"}'
             end
         end
