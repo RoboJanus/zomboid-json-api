@@ -15,11 +15,20 @@ local function handleAddItem(args)
                 if not sq then
                     return '{"error":"player has no current square"}'
                 end
+                local inv = p:getInventory()
                 local added = 0
                 for c = 1, count do
-                    local item = sq:AddWorldInventoryItem(itemType, 0.5, 0.5, 0.0)
-                    if item then
-                        added = added + 1
+                    -- Spawn on ground then immediately move to player inventory
+                    local worldItem = sq:AddWorldInventoryItem(itemType, 0.5, 0.5, 0.0)
+                    if worldItem then
+                        local item = worldItem:getItem()
+                        if item then
+                            sq:removeWorldObject(worldItem)
+                            sq:getWorldObjects():remove(worldItem)
+                            inv:AddItem(item)
+                            inv:setDirty(true)
+                            added = added + 1
+                        end
                     end
                 end
                 if added == 0 then
