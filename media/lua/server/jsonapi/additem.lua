@@ -17,13 +17,12 @@ local function handleAddItem(args)
                     local item = inv:AddItem(itemType)
                     if item then
                         added = added + 1
+                        p:sendObjectChange("addItem", {item = item})
                     end
                 end
                 if added == 0 then
                     return '{"error":"invalid item type: ' .. JsonAPI.jsonEscape(itemType) .. '"}'
                 end
-                inv:setDirty(true)
-                sendServerCommand(p, "JsonAPI", "refreshInventory", {item = itemType, count = tostring(added)})
                 return '{"added":"' .. JsonAPI.jsonEscape(itemType) .. '","count":' .. added .. ',"to":"' .. JsonAPI.jsonEscape(username) .. '"}'
             end
         end
