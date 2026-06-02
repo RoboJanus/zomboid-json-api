@@ -1,14 +1,11 @@
 local function onServerCommand(module, command, args)
     if module ~= "JsonAPI" then return end
-    if command == "refreshInventory" and args then
+    if command == "itemDelivered" and args then
+        local count = args.count or "1"
+        local item = args.item or "item"
         local player = getPlayer()
-        if player and args.item then
-            local count = tonumber(args.count) or 1
-            local inv = player:getInventory()
-            for i = 1, count do
-                inv:AddItem(args.item)
-            end
-            inv:setDirty(true)
+        if player then
+            player:Say("Received " .. count .. "x " .. item)
         end
     end
 end

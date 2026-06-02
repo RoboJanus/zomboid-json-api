@@ -11,10 +11,13 @@ local function handleAddItem(args)
         for i = 0, onlinePlayers:size() - 1 do
             local p = onlinePlayers:get(i)
             if p:getUsername() == username then
-                local inv = p:getInventory()
+                local sq = p:getCurrentSquare()
+                if not sq then
+                    return '{"error":"player has no current square"}'
+                end
                 local added = 0
                 for c = 1, count do
-                    local item = inv:AddItem(itemType)
+                    local item = sq:AddWorldInventoryItem(itemType, 0.5, 0.5, 0.0)
                     if item then
                         added = added + 1
                     end
@@ -22,7 +25,7 @@ local function handleAddItem(args)
                 if added == 0 then
                     return '{"error":"invalid item type: ' .. JsonAPI.jsonEscape(itemType) .. '"}'
                 end
-                sendServerCommand(p, "JsonAPI", "refreshInventory", {item = itemType, count = tostring(added)})
+                sendServerCommand(p, "JsonAPI", "itemDelivered", {item = itemType, count = tostring(added)})
                 return '{"added":"' .. JsonAPI.jsonEscape(itemType) .. '","count":' .. added .. ',"to":"' .. JsonAPI.jsonEscape(username) .. '"}'
             end
         end
