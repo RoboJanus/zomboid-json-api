@@ -7,16 +7,18 @@ A server-side mod for Project Zomboid (Build 42+) that provides a file-based JSO
 ```
 External Tool                    PZ Server (this mod)
      |                                  |
-     |-- write queue.json ------------->|
+     |-- write jsonapi-queue.txt ------>|
      |                                  |-- process requests
-     |                                  |-- write response files
-     |<-- read responses/<id>.json -----|
+     |                                  |-- write jsonapi-resp-<id>.txt
+     |<-- read jsonapi-resp-<id>.txt ---|
 ```
 
-1. External tool writes a request to `<cachedir>/Lua/json-api/requests/queue.json`
+1. External tool writes a request to `<cachedir>/Lua/jsonapi-queue.txt`
 2. Mod reads the queue every N seconds (configurable), processes each request
-3. Mod writes responses to `<cachedir>/Lua/json-api/responses/<id>.json`
+3. Mod writes responses to `<cachedir>/Lua/jsonapi-resp-<id>.txt`
 4. External tool reads the response file
+
+> **Note (Build 42.20+):** PZ restricts `getFileWriter` to only allow `.ini`, `.cfg`, `.txt`, and `.log` extensions. All files use `.txt` despite containing JSON content.
 
 ## Installation
 
@@ -27,22 +29,21 @@ External Tool                    PZ Server (this mod)
 
 ## File Locations
 
-All files are relative to your server's Zomboid directory (the `-cachedir` path):
+All files are in the `Lua/` directory under your server's Zomboid cache directory (the `-cachedir` path):
 
 ```
-<cachedir>/Lua/json-api/
-├── requests/
-│   └── queue.json      ← write requests here
-└── responses/
-    └── <id>.json       ← read responses here
+<cachedir>/Lua/
+├── jsonapi-queue.txt          ← write requests here
+├── jsonapi-resp-<id>.txt      ← read responses here
+└── jsonapi-resp-init.txt      ← written on server start (ready marker)
 ```
 
-**Default path**: `~/Zomboid/Lua/json-api/`  
-**Docker (custom cachedir)**: `<cachedir>/Lua/json-api/`
+**Default path**: `~/Zomboid/Lua/`  
+**Docker (custom cachedir)**: `<cachedir>/Lua/`
 
 ## Request Format
 
-Write a JSON array to `requests/queue.json`:
+Write a JSON array to `jsonapi-queue.txt`:
 
 ```json
 [
@@ -53,15 +54,15 @@ Write a JSON array to `requests/queue.json`:
 
 | Field  | Required | Description |
 |--------|----------|-------------|
-| `id`   | Yes      | Unique identifier. Used as the response filename (`<id>.json`) |
+| `id`   | Yes      | Unique identifier. Used as the response filename (`jsonapi-resp-<id>.txt`) |
 | `path` | Yes      | The handler endpoint to invoke |
-| `args` | No       | Key-value arguments passed to the handler (reserved for future use) |
+| `args` | No       | Key-value arguments passed to the handler |
 
 The queue is cleared after processing. Multiple requests can be batched in a single write.
 
 ## Response Format
 
-Each request produces a response file at `responses/<id>.json` wrapped in a timestamp envelope:
+Each request produces a response file at `jsonapi-resp-<id>.txt` wrapped in a timestamp envelope:
 
 ```json
 {
@@ -173,47 +174,12 @@ Get detailed stats for a connected player including survival time, kills, and sk
     "Fitness": 3,
     "Strength": 4,
     "Sprinting": 5,
-    "Lightfoot": 2,
-    "Nimble": 3,
-    "Sneak": 1,
-    "Axe": 4,
-    "Blunt": 2,
-    "SmallBlunt": 1,
-    "LongBlade": 0,
-    "SmallBlade": 1,
-    "Spear": 0,
-    "Maintenance": 3,
-    "Woodwork": 4,
-    "Cooking": 2,
-    "Farming": 1,
-    "Doctor": 2,
-    "Electricity": 0,
-    "MetalWelding": 1,
-    "Mechanics": 0,
-    "Tailoring": 2,
-    "Aiming": 3,
-    "Reloading": 2,
-    "Fishing": 0,
-    "Trapping": 0,
-    "PlantScavenging": 1
+    ...
   }
 }
 ```
 
-Pass `"username": "all"` to get stats for all connected players:
-
-```json
-[{"id": "req007", "path": "playerstats", "username": "all"}]
-```
-
-```json
-{
-  "players": [
-    {"username": "survivor1", "name": "John Smith", "hoursSurvived": 48.5, "zombieKills": 127, "skills": {...}},
-    {"username": "survivor2", "name": "Jane Doe", "hoursSurvived": 12.3, "zombieKills": 42, "skills": {...}}
-  ]
-}
-```
+Pass `"username": "all"` to get stats for all connected players.
 
 ## Configuration
 
@@ -226,11 +192,7 @@ Configurable via **Sandbox Options > JSON API**:
 
 ## Extending with Your Own Mod
 
-Other mods can register custom API handlers by calling `JsonAPI.addHandler()`. This allows you to expose your mod's data or functionality through the same file-based API.
-
-### Example: Adding a Custom Endpoint
-
-Create a file in your mod at `media/lua/server/MyModAPI.lua`:
+Other mods can register custom API handlers by calling `JsonAPI.addHandler()`:
 
 ```lua
 if isClient() then return end
@@ -244,72 +206,15 @@ local function handleZombieCount(args)
     return '{"zombieCount":' .. count .. '}'
 end
 
-local function handleWeather(args)
-    local cm = getClimateManager()
-    local temp = cm:getAirTemperatureForCharacter()
-    local raining = cm:isRaining()
-    return '{"temperature":' .. temp .. ',"raining":' .. tostring(raining) .. '}'
-end
-
 Events.OnServerStarted.Add(function()
     if JsonAPI then
         JsonAPI.addHandler("my-mod/zombies", handleZombieCount)
-        JsonAPI.addHandler("my-mod/weather", handleWeather)
     end
 end)
 ```
 
-Then request it:
-```json
-[{"id": "z001", "path": "my-mod/zombies"}]
-```
-
-Response at `responses/z001.json`:
-```json
-{"zombieCount": 847}
-```
-
-### Handler API
-
-```lua
-JsonAPI.addHandler(path, handlerFunction)
-```
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `path` | string | Endpoint path (e.g., `"my-mod/endpoint"`) |
-| `handlerFunction` | function | `function(args) -> string` — receives args table, must return a JSON string |
-
-**Important notes:**
-
-- `JsonAPI` is a global table — accessible from any mod
-- Register handlers in `Events.OnServerStarted` to ensure JSON API has initialized
-- Your mod should be listed **after** `jsonapi` in the server's `Mods=` line
-- Handlers must return a valid JSON string
-- Handlers are wrapped in `pcall` — errors are caught and returned as `{"error": "..."}`
-- Avoid expensive operations in handlers since they run on the server tick
-
-### Conventions
-
-- Use your mod name as a prefix for paths: `"my-mod/endpoint"`
-- Return valid JSON objects (not arrays or primitives at the top level)
-- Keep responses concise — large responses slow down file I/O
-
-### Mod File Structure
-
-The built-in handlers each live in their own file under `media/lua/server/jsonapi/` as reference implementations:
-
-```
-media/lua/server/
-├── JsonAPI.lua              ← Core framework (do not modify)
-└── jsonapi/
-    ├── sessions.lua         ← Example: read-only query
-    ├── status.lua           ← Example: simple server info
-    ├── servermsg.lua        ← Example: action with message arg
-    ├── save.lua             ← Example: no-arg action
-    ├── additem.lua          ← Example: action with multiple args
-    └── playerstats.lua      ← Example: player data query with args
-```
+Request: `[{"id": "z001", "path": "my-mod/zombies"}]`  
+Response at `jsonapi-resp-z001.txt`: `{"zombieCount": 847}`
 
 ## Developing External Tools
 
@@ -321,7 +226,7 @@ Write the full queue atomically to avoid partial reads:
 import json, os
 
 requests = [{"id": "req001", "path": "sessions"}]
-queue_path = "/path/to/cachedir/Lua/json-api/requests/queue.json"
+queue_path = "/path/to/cachedir/Lua/jsonapi-queue.txt"
 
 # Write atomically
 tmp = queue_path + ".tmp"
@@ -337,7 +242,7 @@ Poll for the response file to appear:
 ```python
 import json, time, os
 
-response_path = "/path/to/cachedir/Lua/json-api/responses/req001.json"
+response_path = "/path/to/cachedir/Lua/jsonapi-resp-req001.txt"
 
 for _ in range(50):  # 5 seconds at 100ms intervals
     if os.path.exists(response_path):
@@ -357,9 +262,15 @@ import time
 request_id = str(int(time.time() * 1000))  # millisecond timestamp
 ```
 
+## Build 42.20 Compatibility Notes
+
+PZ 42.20 introduced a security restriction that limits `getFileWriter` to files with extensions `.ini`, `.cfg`, `.txt`, or `.log` only. This mod uses `.txt` for all files. The file content is still JSON — just with a `.txt` extension.
+
+Additionally, `getFileWriter` cannot create files in nested subdirectories that don't already exist. All files are written flat in the `Lua/` directory with a `jsonapi-` prefix.
+
 ## Compatibility
 
-- Project Zomboid Build 42+ (multiplayer and singleplayer)
+- Project Zomboid Build 42.20+ (multiplayer dedicated servers)
 - Includes server and client components
 - No dependencies
 - Works with or without players connected
