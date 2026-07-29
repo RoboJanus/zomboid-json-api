@@ -22,8 +22,8 @@ local function handleAddItem(args)
                 if added == 0 then
                     return '{"error":"invalid item type: ' .. JsonAPI.jsonEscape(itemType) .. '"}'
                 end
-                inv:setDirty(true)
-                sendServerCommand(p, "JsonAPI", "refreshInventory", {item = itemType, count = tostring(added)})
+                local msg = added .. "x " .. itemType .. " delivered. Relog to sync inventory for use."
+                sendServerCommand(p, "JsonAPI", "itemDelivered", {message = msg})
                 return '{"added":"' .. JsonAPI.jsonEscape(itemType) .. '","count":' .. added .. ',"to":"' .. JsonAPI.jsonEscape(username) .. '"}'
             end
         end
