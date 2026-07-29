@@ -4,7 +4,7 @@
 --** External tools write request JSON files, the mod processes
 --** them and writes response JSON files.
 --**
---** Directory structure (in <cachedir>/Lua/jsonapi/):
+--** Directory structure (in <cachedir>/Lua/json-api/):
 --**   requests/   - incoming request files (consumed on processing)
 --**   responses/  - output response files
 --**
@@ -20,16 +20,16 @@ if isClient() then return end
 JsonAPI = {}
 JsonAPI.handlers = {}
 
-local MOD_ID = "jsonapi"
-local REQUEST_DIR = "requests"
-local RESPONSE_DIR = "responses"
+local BASE_DIR = "json-api"
+local REQUEST_DIR = BASE_DIR .. "/requests"
+local RESPONSE_DIR = BASE_DIR .. "/responses"
 
 -- ============================================================
--- File I/O (using mod-sandboxed getModFileWriter/getModFileReader)
+-- File I/O
 -- ============================================================
 
 local function writeFile(path, content)
-    local writer = getModFileWriter(MOD_ID, path, true, false)
+    local writer = getFileWriter(path, true, false)
     if writer then
         writer:write(content)
         writer:close()
@@ -59,7 +59,7 @@ end
 -- ============================================================
 
 local function checkRequests()
-    local reader = getModFileReader(MOD_ID, REQUEST_DIR .. "/queue.json", true)
+    local reader = getFileReader(REQUEST_DIR .. "/queue.json", true)
     if not reader then return end
     local content = ""
     local line = reader:readLine()
@@ -131,7 +131,7 @@ end
 local function onServerStarted()
     writeFile(REQUEST_DIR .. "/queue.json", "[]")
     writeFile(RESPONSE_DIR .. "/.init", "")
-    print("[JsonAPI] Initialized. Listening for requests in Lua/" .. MOD_ID .. "/" .. REQUEST_DIR .. "/queue.json")
+    print("[JsonAPI] Initialized. Listening for requests in Lua/" .. REQUEST_DIR .. "/queue.json")
 end
 
 Events.OnServerStarted.Add(onServerStarted)
