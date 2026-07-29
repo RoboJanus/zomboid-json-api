@@ -4,12 +4,16 @@
 --** External tools write request JSON files, the mod processes
 --** them and writes response JSON files.
 --**
---** Directory structure (in <cachedir>/Lua/json-api/):
---**   requests/   - incoming request files (consumed on processing)
---**   responses/  - output response files
+--** NOTE: PZ 42.20 restricts getFileWriter to only allow
+--** extensions: .ini, .cfg, .txt, .log
+--** Therefore all files use .txt despite containing JSON content.
+--**
+--** File layout (in <cachedir>/Lua/):
+--**   jsonapi-queue.txt       - incoming requests (consumed on processing)
+--**   jsonapi-resp-<id>.txt   - output response files
 --**
 --** Request format: [{"id":"reqId","path":"endpoint","args":{}}]
---** Response: written to responses/<id>.json
+--** Response: written to jsonapi-resp-<id>.txt
 --**
 --** Extensible: other mods can register handlers via
 --**   JsonAPI.addHandler("path/name", function(args) return jsonString end)
@@ -20,9 +24,9 @@ if isClient() then return end
 JsonAPI = {}
 JsonAPI.handlers = {}
 
-local BASE_DIR = "json-api"
-local REQUEST_DIR = BASE_DIR .. "/requests"
-local RESPONSE_DIR = BASE_DIR .. "/responses"
+local QUEUE_FILE = "jsonapi-queue.txt"
+local RESP_PREFIX = "jsonapi-resp-"
+local RESP_EXT = ".txt"
 
 -- ============================================================
 -- File I/O
@@ -59,7 +63,7 @@ end
 -- ============================================================
 
 local function checkRequests()
-    local reader = getFileReader(REQUEST_DIR .. "/queue.json", true)
+    local reader = getFileReader(QUEUE_FILE, true)
     if not reader then return end
     local content = ""
     local line = reader:readLine()
@@ -72,7 +76,7 @@ local function checkRequests()
     if content == "" or content == "[]" then return end
 
     -- Clear the queue
-    writeFile(REQUEST_DIR .. "/queue.json", "[]")
+    writeFile(QUEUE_FILE, "[]")
 
     -- Parse and process each request
     for id, path in content:gmatch('"id"%s*:%s*"([^"]*)"%s*,%s*"path"%s*:%s*"([^"]*)"') do
@@ -87,18 +91,17 @@ local function checkRequests()
             local ok, response = pcall(handler, args)
             local ts = string.format("%.0f", getTimestampMs())
             if ok then
-                writeFile(RESPONSE_DIR .. "/" .. id .. ".json", '{"timestamp":' .. ts .. ',"status":"success","response":' .. response .. '}')
+                writeFile(RESP_PREFIX .. id .. RESP_EXT, '{"timestamp":' .. ts .. ',"status":"success","response":' .. response .. '}')
                 if SandboxVars and SandboxVars.JsonAPI and SandboxVars.JsonAPI.VerboseLogging then
                     print("[JsonAPI] Request: " .. id .. " -> " .. path)
-                    print("[JsonAPI] Response: " .. RESPONSE_DIR .. "/" .. id .. ".json")
                 end
             else
-                writeFile(RESPONSE_DIR .. "/" .. id .. ".json", '{"timestamp":' .. ts .. ',"status":"error","error":"' .. JsonAPI.jsonEscape(tostring(response)) .. '"}')
+                writeFile(RESP_PREFIX .. id .. RESP_EXT, '{"timestamp":' .. ts .. ',"status":"error","error":"' .. JsonAPI.jsonEscape(tostring(response)) .. '"}')
                 print("[JsonAPI] ERROR processing " .. id .. ": " .. tostring(response))
             end
         else
             local ts = string.format("%.0f", getTimestampMs())
-            writeFile(RESPONSE_DIR .. "/" .. id .. ".json", '{"timestamp":' .. ts .. ',"status":"error","error":"unknown path: ' .. JsonAPI.jsonEscape(path) .. '"}')
+            writeFile(RESP_PREFIX .. id .. RESP_EXT, '{"timestamp":' .. ts .. ',"status":"error","error":"unknown path: ' .. JsonAPI.jsonEscape(path) .. '"}')
             if SandboxVars and SandboxVars.JsonAPI and SandboxVars.JsonAPI.VerboseLogging then
                 print("[JsonAPI] Request: " .. id .. " -> " .. path .. " (unknown)")
             end
@@ -129,9 +132,9 @@ end
 -- ============================================================
 
 local function onServerStarted()
-    writeFile(REQUEST_DIR .. "/queue.json", "[]")
-    writeFile(RESPONSE_DIR .. "/.init", "")
-    print("[JsonAPI] Initialized. Listening for requests in Lua/" .. REQUEST_DIR .. "/queue.json")
+    writeFile(QUEUE_FILE, "[]")
+    writeFile(RESP_PREFIX .. "init" .. RESP_EXT, '{"status":"ready","timestamp":' .. string.format("%.0f", getTimestampMs()) .. '}')
+    print("[JsonAPI] Initialized. Listening for requests in Lua/" .. QUEUE_FILE)
 end
 
 Events.OnServerStarted.Add(onServerStarted)
