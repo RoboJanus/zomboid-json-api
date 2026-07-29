@@ -4,12 +4,16 @@
 --** External tools write request JSON files, the mod processes
 --** them and writes response JSON files.
 --**
---** Directory structure (in <cachedir>/Lua/):
---**   jsonapi-queue.json      - incoming requests (consumed on processing)
---**   jsonapi-resp-<id>.json  - output response files
+--** NOTE: PZ 42.20 restricts getFileWriter to only allow
+--** extensions: .ini, .cfg, .txt, .log
+--** Therefore all files use .txt despite containing JSON content.
+--**
+--** File layout (in <cachedir>/Lua/):
+--**   jsonapi-queue.txt       - incoming requests (consumed on processing)
+--**   jsonapi-resp-<id>.txt   - output response files
 --**
 --** Request format: [{"id":"reqId","path":"endpoint","args":{}}]
---** Response: written to jsonapi-resp-<id>.json
+--** Response: written to jsonapi-resp-<id>.txt
 --**
 --** Extensible: other mods can register handlers via
 --**   JsonAPI.addHandler("path/name", function(args) return jsonString end)
@@ -20,8 +24,9 @@ if isClient() then return end
 JsonAPI = {}
 JsonAPI.handlers = {}
 
-local QUEUE_FILE = "jsonapi-queue.json"
+local QUEUE_FILE = "jsonapi-queue.txt"
 local RESP_PREFIX = "jsonapi-resp-"
+local RESP_EXT = ".txt"
 
 -- ============================================================
 -- File I/O
@@ -86,17 +91,17 @@ local function checkRequests()
             local ok, response = pcall(handler, args)
             local ts = string.format("%.0f", getTimestampMs())
             if ok then
-                writeFile(RESP_PREFIX .. id .. ".json", '{"timestamp":' .. ts .. ',"status":"success","response":' .. response .. '}')
+                writeFile(RESP_PREFIX .. id .. RESP_EXT, '{"timestamp":' .. ts .. ',"status":"success","response":' .. response .. '}')
                 if SandboxVars and SandboxVars.JsonAPI and SandboxVars.JsonAPI.VerboseLogging then
                     print("[JsonAPI] Request: " .. id .. " -> " .. path)
                 end
             else
-                writeFile(RESP_PREFIX .. id .. ".json", '{"timestamp":' .. ts .. ',"status":"error","error":"' .. JsonAPI.jsonEscape(tostring(response)) .. '"}')
+                writeFile(RESP_PREFIX .. id .. RESP_EXT, '{"timestamp":' .. ts .. ',"status":"error","error":"' .. JsonAPI.jsonEscape(tostring(response)) .. '"}')
                 print("[JsonAPI] ERROR processing " .. id .. ": " .. tostring(response))
             end
         else
             local ts = string.format("%.0f", getTimestampMs())
-            writeFile(RESP_PREFIX .. id .. ".json", '{"timestamp":' .. ts .. ',"status":"error","error":"unknown path: ' .. JsonAPI.jsonEscape(path) .. '"}')
+            writeFile(RESP_PREFIX .. id .. RESP_EXT, '{"timestamp":' .. ts .. ',"status":"error","error":"unknown path: ' .. JsonAPI.jsonEscape(path) .. '"}')
             if SandboxVars and SandboxVars.JsonAPI and SandboxVars.JsonAPI.VerboseLogging then
                 print("[JsonAPI] Request: " .. id .. " -> " .. path .. " (unknown)")
             end
@@ -128,7 +133,7 @@ end
 
 local function onServerStarted()
     writeFile(QUEUE_FILE, "[]")
-    writeFile(RESP_PREFIX .. "init.json", '{"status":"ready","timestamp":' .. string.format("%.0f", getTimestampMs()) .. '}')
+    writeFile(RESP_PREFIX .. "init" .. RESP_EXT, '{"status":"ready","timestamp":' .. string.format("%.0f", getTimestampMs()) .. '}')
     print("[JsonAPI] Initialized. Listening for requests in Lua/" .. QUEUE_FILE)
 end
 
