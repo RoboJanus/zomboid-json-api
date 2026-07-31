@@ -1,14 +1,5 @@
 if isClient() then return end
 
-local perks = {
-    "Fitness", "Strength", "Sprinting", "Lightfoot", "Nimble",
-    "Sneak", "Axe", "Blunt", "SmallBlunt", "LongBlade",
-    "SmallBlade", "Spear", "Maintenance", "Woodwork",
-    "Cooking", "Farming", "Doctor", "Electricity",
-    "MetalWelding", "Mechanics", "Tailoring", "Aiming",
-    "Reloading", "Fishing", "Trapping", "PlantScavenging"
-}
-
 local function buildPlayerStats(player)
     local username = player:getUsername()
     local name = username
@@ -21,21 +12,28 @@ local function buildPlayerStats(player)
     local hours = player:getHoursSurvived()
     local kills = player:getZombieKills()
 
+    -- Dynamically discover all perks from the Perks registry
     local skills = ""
     local first = true
-    for i = 1, #perks do
-        local perkName = perks[i]
-        local perk = Perks.FromString(perkName)
-        if perk then
-            local level = player:getPerkLevel(perk)
-            if not first then skills = skills .. "," end
-            skills = skills .. '"' .. perkName .. '":' .. level
-            first = false
+    local perkList = PerkFactory.PerkList
+    if perkList then
+        for i = 0, perkList:size() - 1 do
+            local perk = perkList:get(i)
+            if perk then
+                local perkType = perk:getType()
+                if perkType and perkType ~= "None" then
+                    local level = player:getPerkLevel(perk)
+                    local xp = player:getXp():getXP(perk)
+                    if not first then skills = skills .. "," end
+                    skills = skills .. '"' .. perkType .. '":{"level":' .. level .. ',"xp":' .. string.format("%.1f", xp) .. '}'
+                    first = false
+                end
+            end
         end
     end
 
-    return '{"username":"' .. username .. '"'
-        .. ',"name":"' .. (name or username) .. '"'
+    return '{"username":"' .. JsonAPI.jsonEscape(username) .. '"'
+        .. ',"name":"' .. JsonAPI.jsonEscape(name or username) .. '"'
         .. ',"hoursSurvived":' .. string.format("%.1f", hours)
         .. ',"zombieKills":' .. kills
         .. ',"skills":{' .. skills .. '}}'
