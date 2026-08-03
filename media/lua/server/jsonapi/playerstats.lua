@@ -20,8 +20,8 @@ local function buildPlayerStats(player)
         for i = 0, perkList:size() - 1 do
             local perk = perkList:get(i)
             if perk then
-                local perkType = perk:getType()
-                if perkType and perkType ~= "None" then
+                local ok, perkType = pcall(function() return tostring(perk:getType()) end)
+                if ok and perkType and perkType ~= "None" and perkType ~= "" then
                     local level = player:getPerkLevel(perk)
                     local xp = player:getXp():getXP(perk)
                     if not first then skills = skills .. "," end
