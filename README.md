@@ -277,7 +277,7 @@ Additionally, `getFileWriter` cannot create files in nested subdirectories that 
 
 ## License
 
-MIT
+See LICENSE file
 
 ## Source Code
 
