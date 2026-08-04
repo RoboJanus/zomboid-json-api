@@ -1,0 +1,19 @@
+{
+  "build": {
+    "json-api": {
+      "type": "steam_workshop",
+      "build_script": "build.sh",
+      "when_changed": ["media/*", "mod.info", "workshop.txt", "preview.svg", "build.sh"]
+    }
+  },
+  "release": {
+    "json-api": {
+      "type": "steam_workshop",
+      "app_id": "108600",
+      "workshop_file": "workshop.txt",
+      "description_file": "workshop_description.bbcode",
+      "dev_deploy_path": "/u01/data/klickalack/pz-dev-mods",
+      "dev_restart_server": "klickalack-pz-scenario-dev"
+    }
+  }
+}
