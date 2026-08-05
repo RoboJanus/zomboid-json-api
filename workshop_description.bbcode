@@ -4,11 +4,8 @@ A file-based request/response API for Project Zomboid. External tools write requ
 
 [h2]How It Works[/h2]
 
-External tools write to Lua/jsonapi-queue.txt, the mod processes them and writes responses to Lua/jsonapi-resp-<id>.txt. All responses include a timestamp envelope.
+External tools write to Lua/jsonapi-queue.json, the mod processes them and writes responses to Lua/jsonapi-resp-<id>.json. All responses include a timestamp envelope.
 
-[h2]Build 42.20 Note[/h2]
-
-PZ 42.20 restricts file I/O to .ini/.cfg/.txt/.log extensions only. All files use .txt extension despite containing JSON content.
 
 [h2]Built-in Endpoints[/h2]
 [list]

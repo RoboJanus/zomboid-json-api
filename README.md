@@ -18,7 +18,6 @@ External Tool                    PZ Server (this mod)
 3. Mod writes responses to `<cachedir>/Lua/jsonapi-resp-<id>.json`
 4. External tool reads the response file
 
-> **Note (Build 42.20+):** PZ restricts `getFileWriter` to only allow `.ini`, `.cfg`, `.txt`, and `.log` extensions. All files use `.txt` despite containing JSON content.
 
 ## Installation
 
@@ -214,7 +213,7 @@ end)
 ```
 
 Request: `[{"id": "z001", "path": "my-mod/zombies"}]`  
-Response at `jsonapi-resp-z001.txt`: `{"zombieCount": 847}`
+Response at `jsonapi-resp-z001.json`: `{"zombieCount": 847}`
 
 ## Developing External Tools
 
@@ -242,7 +241,7 @@ Poll for the response file to appear:
 ```python
 import json, time, os
 
-response_path = "/path/to/cachedir/Lua/jsonapi-resp-req001.txt"
+response_path = "/path/to/cachedir/Lua/jsonapi-resp-req001.json"
 
 for _ in range(50):  # 5 seconds at 100ms intervals
     if os.path.exists(response_path):
@@ -261,6 +260,4 @@ Use unique IDs to avoid collisions when multiple tools write concurrently. Times
 import time
 request_id = str(int(time.time() * 1000))  # millisecond timestamp
 ```
-
-## Build 42.20 Compatibility Notes
 
