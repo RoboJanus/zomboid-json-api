@@ -8,12 +8,11 @@
   "title" "JSON API [B42]"
   "description" ""
   "changenote" ""
-  "tags"
+  "kvtags"
   {
     "0" "Build 42"
     "1" "Utility"
     "2" "Framework"
-    "3" "API"
+    "3" "Misc"
   }
 }
-
