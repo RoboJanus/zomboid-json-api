@@ -16,14 +16,18 @@ local function handleAddItem(args)
                 for c = 1, count do
                     local item = inv:AddItem(itemType)
                     if item then
+                        sendAddItemToContainer(inv, item)
                         added = added + 1
                     end
                 end
                 if added == 0 then
                     return '{"error":"invalid item type: ' .. JsonAPI.jsonEscape(itemType) .. '"}'
                 end
-                local msg = added .. "x " .. itemType .. " delivered. Relog to sync inventory for use."
-                sendServerCommand(p, "JsonAPI", "itemDelivered", {message = msg})
+                -- Notify client to refresh inventory UI (instant visibility)
+                local msg = added .. "x " .. itemType .. " delivered to your inventory."
+                sendServerCommand(p, "JsonAPI", "itemDelivered", {
+                    message = msg
+                })
                 return '{"added":"' .. JsonAPI.jsonEscape(itemType) .. '","count":' .. added .. ',"to":"' .. JsonAPI.jsonEscape(username) .. '"}'
             end
         end

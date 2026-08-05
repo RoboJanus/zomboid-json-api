@@ -13,6 +13,6 @@ rm -rf content
 mkdir -p "content/mods/${MOD_ID}/${VERSION_DIR}"
 cp mod.info "content/mods/${MOD_ID}/"
 cp mod.info "content/mods/${MOD_ID}/${VERSION_DIR}/"
-cp -r media "content/mods/${MOD_ID}/${VERSION_DIR}/"
+cp -r ${VERSION_DIR}/media "content/mods/${MOD_ID}/${VERSION_DIR}/"
 
 echo "Workshop content staged: content/mods/${MOD_ID}/${VERSION_DIR}/"

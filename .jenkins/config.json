@@ -3,7 +3,7 @@
     "json-api": {
       "type": "steam_workshop",
       "build_script": "build.sh",
-      "when_changed": ["media/*", "mod.info", "workshop.txt", "workshop_description.bbcode", "preview.svg", "build.sh"]
+      "when_changed": ["42/*", "mod.info", "workshop.txt", "workshop_description.bbcode", "preview.svg", "build.sh"]
     }
   },
   "release": {
