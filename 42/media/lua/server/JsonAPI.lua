@@ -4,16 +4,12 @@
 --** External tools write request JSON files, the mod processes
 --** them and writes response JSON files.
 --**
---** NOTE: PZ 42.20 restricts getFileWriter to only allow
---** extensions: .ini, .cfg, .txt, .log
---** Therefore all files use .txt despite containing JSON content.
---**
 --** File layout (in <cachedir>/Lua/):
---**   jsonapi-queue.txt       - incoming requests (consumed on processing)
---**   jsonapi-resp-<id>.txt   - output response files
+--**   jsonapi-queue.json       - incoming requests (consumed on processing)
+--**   jsonapi-resp-<id>.json   - output response files
 --**
 --** Request format: [{"id":"reqId","path":"endpoint","args":{}}]
---** Response: written to jsonapi-resp-<id>.txt
+--** Response: written to jsonapi-resp-<id>.json
 --**
 --** Extensible: other mods can register handlers via
 --**   JsonAPI.addHandler("path/name", function(args) return jsonString end)
@@ -24,9 +20,9 @@ if isClient() then return end
 JsonAPI = {}
 JsonAPI.handlers = {}
 
-local QUEUE_FILE = "jsonapi-queue.txt"
+local QUEUE_FILE = "jsonapi-queue.json"
 local RESP_PREFIX = "jsonapi-resp-"
-local RESP_EXT = ".txt"
+local RESP_EXT = ".json"
 
 -- ============================================================
 -- File I/O

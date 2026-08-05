@@ -7,15 +7,15 @@ A server-side mod for Project Zomboid (Build 42+) that provides a file-based JSO
 ```
 External Tool                    PZ Server (this mod)
      |                                  |
-     |-- write jsonapi-queue.txt ------>|
+     |-- write jsonapi-queue.json ------>|
      |                                  |-- process requests
-     |                                  |-- write jsonapi-resp-<id>.txt
-     |<-- read jsonapi-resp-<id>.txt ---|
+     |                                  |-- write jsonapi-resp-<id>.json
+     |<-- read jsonapi-resp-<id>.json ---|
 ```
 
-1. External tool writes a request to `<cachedir>/Lua/jsonapi-queue.txt`
+1. External tool writes a request to `<cachedir>/Lua/jsonapi-queue.json`
 2. Mod reads the queue every N seconds (configurable), processes each request
-3. Mod writes responses to `<cachedir>/Lua/jsonapi-resp-<id>.txt`
+3. Mod writes responses to `<cachedir>/Lua/jsonapi-resp-<id>.json`
 4. External tool reads the response file
 
 > **Note (Build 42.20+):** PZ restricts `getFileWriter` to only allow `.ini`, `.cfg`, `.txt`, and `.log` extensions. All files use `.txt` despite containing JSON content.
@@ -33,9 +33,9 @@ All files are in the `Lua/` directory under your server's Zomboid cache director
 
 ```
 <cachedir>/Lua/
-├── jsonapi-queue.txt          ← write requests here
-├── jsonapi-resp-<id>.txt      ← read responses here
-└── jsonapi-resp-init.txt      ← written on server start (ready marker)
+├── jsonapi-queue.json          ← write requests here
+├── jsonapi-resp-<id>.json      ← read responses here
+└── jsonapi-resp-init.json      ← written on server start (ready marker)
 ```
 
 **Default path**: `~/Zomboid/Lua/`  
@@ -43,7 +43,7 @@ All files are in the `Lua/` directory under your server's Zomboid cache director
 
 ## Request Format
 
-Write a JSON array to `jsonapi-queue.txt`:
+Write a JSON array to `jsonapi-queue.json`:
 
 ```json
 [
@@ -54,7 +54,7 @@ Write a JSON array to `jsonapi-queue.txt`:
 
 | Field  | Required | Description |
 |--------|----------|-------------|
-| `id`   | Yes      | Unique identifier. Used as the response filename (`jsonapi-resp-<id>.txt`) |
+| `id`   | Yes      | Unique identifier. Used as the response filename (`jsonapi-resp-<id>.json`) |
 | `path` | Yes      | The handler endpoint to invoke |
 | `args` | No       | Key-value arguments passed to the handler |
 
@@ -62,7 +62,7 @@ The queue is cleared after processing. Multiple requests can be batched in a sin
 
 ## Response Format
 
-Each request produces a response file at `jsonapi-resp-<id>.txt` wrapped in a timestamp envelope:
+Each request produces a response file at `jsonapi-resp-<id>.json` wrapped in a timestamp envelope:
 
 ```json
 {
@@ -226,7 +226,7 @@ Write the full queue atomically to avoid partial reads:
 import json, os
 
 requests = [{"id": "req001", "path": "sessions"}]
-queue_path = "/path/to/cachedir/Lua/jsonapi-queue.txt"
+queue_path = "/path/to/cachedir/Lua/jsonapi-queue.json"
 
 # Write atomically
 tmp = queue_path + ".tmp"
@@ -264,21 +264,3 @@ request_id = str(int(time.time() * 1000))  # millisecond timestamp
 
 ## Build 42.20 Compatibility Notes
 
-PZ 42.20 introduced a security restriction that limits `getFileWriter` to files with extensions `.ini`, `.cfg`, `.txt`, or `.log` only. This mod uses `.txt` for all files. The file content is still JSON — just with a `.txt` extension.
-
-Additionally, `getFileWriter` cannot create files in nested subdirectories that don't already exist. All files are written flat in the `Lua/` directory with a `jsonapi-` prefix.
-
-## Compatibility
-
-- Project Zomboid Build 42.20+ (multiplayer dedicated servers)
-- Includes server and client components
-- No dependencies
-- Works with or without players connected
-
-## License
-
-See LICENSE file
-
-## Source Code
-
-[GitHub](https://github.com/RoboJanus/zomboid-json-api)
